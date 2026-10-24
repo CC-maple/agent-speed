@@ -9,6 +9,10 @@ __pycache__/
 # Test reports, sample runtime data and one-off development scripts
 /artifacts/
 
+# Upstream Windows online installer and its generated uninstaller, kept local
+/install.ps1
+/uninstall.ps1
+
 # Partner documents for live reporting services, kept local and sent to partners directly
 /spec/REPORTING.md
 /spec/REPORTING.zh-Hans.md
