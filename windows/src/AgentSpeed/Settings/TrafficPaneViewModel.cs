@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows.Input;
 using AgentSpeed.App;
 using AgentSpeed.Controls;
@@ -18,8 +17,6 @@ namespace AgentSpeed.Settings;
 /// </summary>
 internal sealed class TrafficPaneViewModel : ObservableObject
 {
-    /// <summary>What the helper does, for <c>traffic.helper.details</c>.</summary>
-    public const string DetailsUrl = "https://github.com/zoefix/agent-speed/blob/main/spec/WINDOWS-SERVICE.md";
 
     private readonly SettingsService _settings;
     private readonly TrafficService _traffic;
@@ -48,7 +45,6 @@ internal sealed class TrafficPaneViewModel : ObservableObject
         PrimaryCommand = new RelayCommand(() => _ = InstallAsync(), () => !_busy && _install.Bundled);
         RemoveCommand = new RelayCommand(() => _ = RemoveAsync(), () => !_busy);
         RetryCommand = new RelayCommand(() => _traffic.Retry());
-        DetailsCommand = new RelayCommand(OpenDetails);
         _settings.Changed += (_, _) => OnPropertyChanged(string.Empty);
         Refresh();
     }
@@ -104,22 +100,6 @@ internal sealed class TrafficPaneViewModel : ObservableObject
         }
     }
 
-    private string? _reportHost;
-
-    /// <summary><c>report.traffic.note</c> while a traffic section is being reported (DESIGN 11), naming the destination.</summary>
-    public string? ReportNote => _reportHost is { } host ? _loc.Format("report.traffic.note", host) : null;
-
-    public void SetReporting(string? host)
-    {
-        if (_reportHost != host)
-        {
-            _reportHost = host;
-            OnPropertyChanged(nameof(ReportNote));
-        }
-    }
-
-    public string DetailsLink => DetailsUrl;
-
     /// <summary>The helper section applies (Windows builds with the service support).</summary>
     public bool ShowsHelper => _helper is not null;
 
@@ -164,8 +144,6 @@ internal sealed class TrafficPaneViewModel : ObservableObject
     public ICommand RemoveCommand { get; }
 
     public ICommand RetryCommand { get; }
-
-    public ICommand DetailsCommand { get; }
 
     public void Relocalize(Localizer localizer)
     {
@@ -271,15 +249,4 @@ internal sealed class TrafficPaneViewModel : ObservableObject
         Refresh();
     }
 
-    private static void OpenDetails()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(DetailsUrl) { UseShellExecute = true });
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            AppLog.Warn("Opening the traffic helper details failed.", ex);
-        }
-    }
 }

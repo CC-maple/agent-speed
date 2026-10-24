@@ -207,29 +207,11 @@ public sealed record AppSettings
     public ImmutableDictionary<string, OrbAnchor> OrbAnchors { get; init; } =
         ImmutableDictionary<string, OrbAnchor>.Empty.WithComparers(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Check GitHub for a new version at launch and every 6 hours (UPDATES section 3).</summary>
-    public bool AutoCheckUpdates { get; init; } = true;
-
-    /// <summary>Time of the last successful update check.</summary>
-    public DateTimeOffset? LastUpdateCheck { get; init; }
-
-    /// <summary>Release tag the user chose to skip; automatic checks never offer it.</summary>
-    public string? SkippedVersion { get; init; }
-
-    /// <summary>Release tag a notification was already shown for (one notification per version).</summary>
-    public string? NotifiedVersion { get; init; }
-
-    /// <summary>NETWORK 1 master switch: off, nothing is ever requested (updates, prices, rates).</summary>
-    public bool NetworkEnabled { get; init; } = true;
-
-    /// <summary>Currency, live unit, subscriptions and the price-table sync (DESIGN 9).</summary>
+    /// <summary>Currency, live unit and subscriptions (DESIGN 9).</summary>
     public CostSettings Cost { get; init; } = CostSettings.Default;
 
     /// <summary>Network traffic measuring and display (DESIGN 10).</summary>
     public TrafficSettings Traffic { get; init; } = TrafficSettings.Default;
-
-    /// <summary>Live reporting (DESIGN 11, Storage): settings and service identities, never keys.</summary>
-    public ReportPreferences Report { get; init; } = ReportPreferences.Default;
 
     public bool IsSourceEnabled(SourceKind kind) => kind switch
     {
@@ -334,12 +316,8 @@ public sealed record AppSettings
         OrbAnchors = CleanAnchors(OrbAnchors),
         Orbs = (Orbs ?? OrbsDocument.ProcessDefault).Validated(),
         OrbNames = Enum.IsDefined(OrbNames) ? OrbNames : OrbNamesMode.Auto,
-        LastUpdateCheck = CleanTimestamp(LastUpdateCheck),
-        SkippedVersion = CleanTag(SkippedVersion),
-        NotifiedVersion = CleanTag(NotifiedVersion),
         Cost = (Cost ?? CostSettings.Default).Validated(),
         Traffic = (Traffic ?? TrafficSettings.Default).Validated(),
-        Report = (Report ?? ReportPreferences.Default).Validated(),
     };
 
     internal static string? CleanTag(string? tag) =>

@@ -48,55 +48,9 @@
         <controls:SettingsCard Header="{loc:Loc settings.currency}" Icon="&#xE8C7;" Description="{loc:Loc cost.apiEquivalent.hint}">
             <cost:CurrencyPicker />
         </controls:SettingsCard>
-        <Border Padding="56,10,16,12">
-            <Border.Style>
-                <Style TargetType="Border" BasedOn="{StaticResource GroupCard}">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Rate.IsShown}" Value="True">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <DataTrigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2">
-                                            <DoubleAnimation.EasingFunction>
-                                                <CubicEase EasingMode="EaseOut" />
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </DataTrigger.EnterActions>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Rate.Line, NotifyOnTargetUpdated=True}" Binding.TargetUpdated="OnLiveTextUpdated"
-                               Style="{StaticResource CaptionText}" Typography.NumeralAlignment="Tabular" AutomationProperties.LiveSetting="Polite" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0" Visibility="{Binding Rate.ShowsStale, Converter={StaticResource Visible}}">
-                        <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE823;" FontSize="12" Margin="0,1,6,0"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBlock Text="{loc:Loc rates.stale}" Style="{StaticResource CaptionText}" />
-                    </StackPanel>
-                    <Button Style="{StaticResource LinkButton}" Content="{loc:Loc rates.attribution}" Command="{Binding OpenAttributionCommand}"
-                            FontSize="12" Height="24" Margin="-4,2,0,-2" ToolTip="https://www.exchangerate-api.com"
-                            Visibility="{Binding Rate.ShowsAttribution, Converter={StaticResource Visible}}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0" Visibility="{Binding Rate.ShowsNetworkOff, Converter={StaticResource Visible}}">
-                        <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE946;" FontSize="12" Margin="0,1,6,0"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBlock Text="{loc:Loc settings.network.offHint}" Style="{StaticResource CaptionText}" />
-                    </StackPanel>
-                </StackPanel>
-                <Button Grid.Column="1" Style="{StaticResource LinkButton}" Content="{Binding Rate.RefreshLabel}" Command="{Binding RefreshRatesCommand}"
-                        VerticalAlignment="Top" Margin="12,-4,-4,0" ToolTip="{Binding NetworkOffTooltip}" ToolTipService.ShowOnDisabled="True" />
-            </Grid>
-        </Border>
-
+        <controls:SettingsCard Header="{loc:Loc win.rates.local}" Icon="&#xE8C7;" Description="{Binding LocalRatesStatus}">
+            <TextBox Text="{Binding RatesFile, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" MaxWidth="420" TextWrapping="Wrap" />
+        </controls:SettingsCard>
         <!-- 2. Live value: the taskbar widget and the dashboard; each orb has its own unit -->
         <controls:SettingsCard Header="{loc:Loc settings.liveUnit}" Icon="&#xEC4A;" Description="{loc:Loc settings.liveUnit.hint}" Margin="0,16,0,4">
             <Border Style="{StaticResource SegmentedContainer}">
@@ -144,56 +98,10 @@
                       AutomationProperties.HelpText="{loc:Loc settings.cost.includeSubscriptionsHint}" />
         </controls:SettingsCard>
 
+        <TextBlock Text="{Binding BundledPricesStatus}" Style="{StaticResource CaptionText}" Margin="2,20,0,8" />
         <!-- 4. Price table -->
         <TextBlock Text="{loc:Loc prices.title}" Style="{StaticResource SectionHeaderText}" Margin="2,20,0,8"
                    AutomationProperties.HeadingLevel="Level2" />
-        <Border Style="{StaticResource GroupCard}" Padding="16,12,16,12" MinHeight="68">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" MinWidth="120" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Style="{StaticResource SymbolIcon}" Text="&#xE8A5;" FontSize="20" Margin="2,2,18,0" VerticalAlignment="Top" />
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <WrapPanel>
-                        <TextBlock Text="{Binding Prices.Status}" Style="{StaticResource BodyText}" Typography.NumeralAlignment="Tabular" Margin="0,0,8,0" />
-                        <Border CornerRadius="9" Padding="7,0,7,1" Margin="0,1,0,1" VerticalAlignment="Center" BorderThickness="1"
-                                Background="{DynamicResource SubtleFillColorSecondaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                Visibility="{Binding Prices.IsBundled, Converter={StaticResource Visible}}">
-                            <TextBlock Text="{loc:Loc prices.bundled}" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        </Border>
-                    </WrapPanel>
-                    <TextBlock Text="{Binding Prices.LastSync}" Style="{StaticResource CaptionText}" Typography.NumeralAlignment="Tabular" Margin="0,1,0,0" />
-                    <TextBlock Text="{Binding Prices.CheckResult, NotifyOnTargetUpdated=True}" Binding.TargetUpdated="OnLiveTextUpdated"
-                               Style="{StaticResource CaptionText}" Typography.NumeralAlignment="Tabular" Margin="0,1,0,0"
-                               AutomationProperties.LiveSetting="Polite"
-                               Visibility="{Binding Prices.CheckResult, Converter={StaticResource TextVisible}}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0" Visibility="{Binding Prices.ShowsNetworkOff, Converter={StaticResource Visible}}">
-                        <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE946;" FontSize="12" Margin="0,1,6,0"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <TextBlock Text="{loc:Loc settings.network.offHint}" Style="{StaticResource CaptionText}" />
-                    </StackPanel>
-                    <Button Style="{StaticResource LinkButton}" Command="{Binding ViewPriceSourceCommand}" FontSize="12" Height="26" Margin="-4,4,0,-4"
-                            ToolTip="https://github.com/zoefix/agent-speed/blob/main/spec/assets/prices.json"
-                            AutomationProperties.Name="{loc:Loc prices.viewSource}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{loc:Loc prices.viewSource}" VerticalAlignment="Center" />
-                            <TextBlock Text="&#xE8A7;" FontFamily="{DynamicResource AppSymbolFontFamily}" FontSize="11" Margin="6,1,0,0"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-                <Button Grid.Column="2" Content="{loc:Loc prices.check}" Command="{Binding CheckPricesCommand}" MinWidth="120" VerticalAlignment="Center"
-                        ToolTip="{Binding NetworkOffTooltip}" ToolTipService.ShowOnDisabled="True" />
-            </Grid>
-        </Border>
-        <controls:SettingsCard Header="{loc:Loc prices.autoSync}" Icon="&#xE895;" Description="{loc:Loc prices.autoSync.hint}"
-                               IsEnabled="{Binding Prices.CanToggleAutoSync}">
-            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutoSyncPrices, Mode=TwoWay}" AutomationProperties.Name="{loc:Loc prices.autoSync}"
-                      AutomationProperties.HelpText="{loc:Loc prices.autoSync.hint}" />
-        </controls:SettingsCard>
         <Border Style="{StaticResource GroupCard}" Padding="16,12,16,12" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
                 Visibility="{Binding UnknownToday, Converter={StaticResource TextVisible}}">
             <Grid>

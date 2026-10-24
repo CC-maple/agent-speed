@@ -30,8 +30,8 @@ public class OrbMenuModelTests
     private static MenuLevel OrbMenu(AppSettings settings, string id = "o0", SourceAvailability? sources = null) =>
         OrbMenuModel.Build(id, settings, sources ?? SourceAvailability.All, En)!;
 
-    private static MenuLevel QuickMenu(AppSettings settings, ReleaseInfo? update = null) =>
-        QuickMenuModel.Build(settings, SourceAvailability.All, En, update);
+    private static MenuLevel QuickMenu(AppSettings settings) =>
+        QuickMenuModel.Build(settings, SourceAvailability.All, En);
 
     private static MenuRow Row(MenuLevel level, string key) => level.Rows.Single(r => r.Label == En[key]);
 
@@ -328,7 +328,7 @@ public class OrbMenuModelTests
                 En["menu.dashboard"], En["history.open"], Separator,
                 En["menu.size"], En["menu.effects"], En["menu.alwaysOnTop"], En["menu.clickThrough"], En["menu.hideOrb"],
                 En["settings.bar.show"], Separator,
-                En["menu.settings"], En["menu.about"], En["update.check"] + "…", Separator, En["menu.quit"],
+                En["menu.settings"], En["menu.about"], Separator, En["menu.quit"],
             ],
             Outline(menu));
         Assert.True(Row(menu, "menu.dashboard").IsDefault);
@@ -364,7 +364,7 @@ public class OrbMenuModelTests
             [
                 En["menu.dashboard"], En["history.open"], Separator,
                 En["settings.orb"], En["menu.effects"], En["menu.hideOrbs"], En["settings.bar.show"], Separator,
-                En["menu.settings"], En["menu.about"], En["update.check"] + "…", Separator, En["menu.quit"],
+                En["menu.settings"], En["menu.about"], Separator, En["menu.quit"],
             ],
             Outline(menu));
         Assert.Equal(new MenuAction.SetShowOrbs(false), Row(menu, "menu.hideOrbs").Action);
@@ -406,19 +406,6 @@ public class OrbMenuModelTests
         Assert.Equal("menu.showOrb", QuickMenuModel.MasterSwitchKey(1, false));
         Assert.Equal("menu.hideOrbs", QuickMenuModel.MasterSwitchKey(3, true));
         Assert.Equal("menu.showOrbs", QuickMenuModel.MasterSwitchKey(3, false));
-    }
-
-    [Fact]
-    public void AnAvailableUpdateComesFirst()
-    {
-        var release = TestReleases.Release("v9.1.0");
-        var menu = QuickMenu(With(Orb("a")), release);
-
-        Assert.Equal(UpdateText.MenuItem(release, En), menu.Rows.First().Label);
-        Assert.Equal(new MenuIcon.AccentDot(), menu.Rows.First().Icon);
-        Assert.Equal(new MenuAction.OpenUpdate(), menu.Rows.First().Action);
-        Assert.IsType<MenuSeparator>(menu.Entries[1]);
-        Assert.Equal(En["menu.dashboard"], Assert.IsType<MenuRow>(menu.Entries[2]).Label);
     }
 
     [Fact]

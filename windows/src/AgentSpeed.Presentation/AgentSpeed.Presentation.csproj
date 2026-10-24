@@ -21,4 +21,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="AgentSpeed.Presentation.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Settings/ReportSettings.cs" />
+  </ItemGroup>
 </Project>

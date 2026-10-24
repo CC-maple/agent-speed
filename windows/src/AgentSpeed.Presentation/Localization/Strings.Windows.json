@@ -311,5 +311,29 @@
     "zh-Hans": "面板",
     "en": "Dashboard",
     "ja": "ダッシュボード"
+  },
+  "win.rates.local": {
+    "en": "Local exchange rates",
+    "zh-Hant": "本機匯率",
+    "zh-Hans": "本地汇率",
+    "ja": "ローカル為替レート"
+  },
+  "win.rates.localDate": {
+    "en": "Rates dated %@. Read once at startup; restart after updating the file.",
+    "zh-Hant": "匯率日期 %@。僅啟動時讀取一次，更新檔案後請重新啟動程式。",
+    "zh-Hans": "汇率日期 %@。仅启动时读取一次，更新文件后请重启程序。",
+    "ja": "レートの日付 %@。起動時に一度だけ読み込みます。更新後はアプリを再起動してください。"
+  },
+  "win.prices.local": {
+    "en": "Prices use the bundled model price table. No online synchronization.",
+    "zh-Hant": "費用使用內建模型價目表，不進行線上同步。",
+    "zh-Hans": "费用使用内置模型价格表，不进行在线同步。",
+    "ja": "料金は内蔵モデル価格表を使用します。オンライン同期は行いません。"
+  },
+  "win.privacy.offline": {
+    "en": "This Windows build reads local agent logs and does not make network requests. Updates, online synchronization and live reporting have been removed.",
+    "zh-Hant": "此 Windows 版本讀取本機 agent 記錄，不發起網路請求。已移除更新、線上同步和即時回報功能。",
+    "zh-Hans": "此 Windows 版本读取本地 agent 日志，不发起网络请求。已移除更新、在线同步和实时上报功能。",
+    "ja": "この Windows 版はローカルの agent ログを読み取り、ネットワーク要求を行いません。更新、オンライン同期、リアルタイム送信は削除されています。"
   }
 }

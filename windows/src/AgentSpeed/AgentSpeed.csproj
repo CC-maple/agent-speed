@@ -86,4 +86,9 @@
     </ItemGroup>
     <Message Importance="high" Text="Embedding traffic helper %(_TrafficHelperHashed.Rid): %(_TrafficHelperHashed.Sha256)" />
   </Target>
+  <!-- Network features are not part of the Windows application. Sources remain in the checkout. -->
+  <ItemGroup>
+    <Compile Remove="Updates/**/*.cs;Reporting/**/*.cs;App/AppController.Reporting.cs;App/ReportHarness.cs;Settings/ReportPaneViewModel.cs;Settings/Pages/ReportPage.xaml.cs;Cost/PriceSyncController.cs;Cost/ExchangeRateController.cs;Dashboard/ReportInvitationCard.xaml.cs" />
+    <Page Remove="Updates/**/*.xaml;Reporting/**/*.xaml;Settings/Pages/ReportPage.xaml;Dashboard/ReportInvitationCard.xaml" />
+  </ItemGroup>
 </Project>

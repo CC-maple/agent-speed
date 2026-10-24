@@ -28,4 +28,7 @@
   <ItemGroup>
     <AssemblyMetadata Include="RepositoryRoot" Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../..'))" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Reporting/**/*.cs;UpdateSettingsTests.cs" />
+  </ItemGroup>
 </Project>

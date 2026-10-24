@@ -138,7 +138,6 @@ public static class SettingsSerializer
 
             w.WriteEndArray();
             w.WriteBoolean("includeSubscriptions", s.Cost.IncludeSubscriptions);
-            w.WriteBoolean("syncPrices", s.Cost.SyncPrices);
             if (s.Cost.HistoryIncludeSubscriptions is { } historyInclude)
             {
                 w.WriteBoolean("historyIncludeSubscriptions", historyInclude);
@@ -155,19 +154,6 @@ public static class SettingsSerializer
             w.WriteBoolean("includeTools", s.Traffic.IncludeTools);
             w.WriteString("unit", s.Traffic.Bits ? "bits" : "bytes");
             w.WriteString("bar", TrafficSettings.Key(s.Traffic.Bar));
-            w.WriteEndObject();
-
-            w.WriteStartObject("network");
-            w.WriteBoolean("enabled", s.NetworkEnabled);
-            w.WriteEndObject();
-
-            ReportSettingsJson.Write(w, s.Report);
-
-            w.WriteStartObject("updates");
-            w.WriteBoolean("autoCheck", s.AutoCheckUpdates);
-            WriteNullableString(w, "lastCheck", s.LastUpdateCheck?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
-            WriteNullableString(w, "skippedVersion", s.SkippedVersion);
-            WriteNullableString(w, "notifiedVersion", s.NotifiedVersion);
             w.WriteEndObject();
 
             w.WriteEndObject();
@@ -199,12 +185,9 @@ public static class SettingsSerializer
         var effects = Child(root, "effects");
         var sources = Child(root, "sources");
         var dashboard = Child(root, "dashboard");
-        var updates = Child(root, "updates");
         var history = Child(root, "history");
         var cost = Child(root, "cost");
-        var network = Child(root, "network");
         var traffic = Child(root, "traffic");
-        var report = Child(root, "report");
 
         var settings = new AppSettings
         {
@@ -254,11 +237,6 @@ public static class SettingsSerializer
             ChartSeconds = (int)Math.Round(ReadDouble(dashboard, "chartSeconds", d.ChartSeconds)),
             AgentsExpanded = ReadBool(dashboard, "agentsExpanded", d.AgentsExpanded),
             HeroLastTitle = ReadString(dashboard, "heroLastTitle"),
-            AutoCheckUpdates = ReadBool(updates, "autoCheck", d.AutoCheckUpdates),
-            LastUpdateCheck = ReadTimestamp(updates, "lastCheck"),
-            SkippedVersion = ReadString(updates, "skippedVersion"),
-            NotifiedVersion = ReadString(updates, "notifiedVersion"),
-            NetworkEnabled = ReadBool(network, "enabled", d.NetworkEnabled),
             Cost = ReadCost(cost),
             Traffic = new TrafficSettings
             {
@@ -267,7 +245,6 @@ public static class SettingsSerializer
                 Unit = ReadString(traffic, "unit") == "bits" ? TrafficUnit.Bits : TrafficUnit.Bytes,
                 Bar = TrafficSettings.ParseBar(ReadString(traffic, "bar")),
             },
-            Report = ReportSettingsJson.Read(report),
         };
 
         var fileVersion = ReadDouble(root, "version", 1);
@@ -316,7 +293,6 @@ public static class SettingsSerializer
             LiveUnit = ReadString(c, "liveUnit") == "cost" ? LiveUnit.Cost : LiveUnit.Tokens,
             Subscriptions = subscriptions,
             IncludeSubscriptions = ReadBool(c, "includeSubscriptions", d.IncludeSubscriptions),
-            SyncPrices = ReadBool(c, "syncPrices", d.SyncPrices),
             HistoryIncludeSubscriptions = historyInclude,
         }.Validated();
     }

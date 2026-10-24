@@ -1,11 +1,9 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media;
 using AgentSpeed.App;
 using AgentSpeed.Controls;
 using AgentSpeed.Core;
-using AgentSpeed.Core.Network;
 using AgentSpeed.Core.Pricing;
 using AgentSpeed.Cost;
 using AgentSpeed.Presentation.Colors;
@@ -75,8 +73,6 @@ internal sealed class CostPaneViewModel : ObservableObject
     private readonly SettingsService _settings;
     private readonly CostService _cost;
     private SpeedSnapshot _snapshot = SpeedSnapshot.Empty;
-    private RateStatusView? _rate;
-    private PriceTableView? _prices;
     private string _currencyCode = string.Empty;
     private string _currencyName = string.Empty;
     private string _currencyAccessibleName = string.Empty;
@@ -89,16 +85,15 @@ internal sealed class CostPaneViewModel : ObservableObject
         _settings = settings;
         _cost = cost;
         Picker = new CurrencyPickerViewModel(cost.Display, SelectCurrency);
-        RefreshRatesCommand = new RelayCommand(() => _cost.Rates.Refresh(), () => _rate?.CanRefresh == true);
-        CheckPricesCommand = new RelayCommand(CheckPrices, () => _prices?.CanCheck == true);
-        OpenAttributionCommand = new RelayCommand(() => OpenHttps(ExchangeRateSync.AttributionUrl));
-        ViewPriceSourceCommand = new RelayCommand(() => OpenHttps(PriceTableSync.SourcePage));
         settings.Changed += (_, _) => Refresh();
         cost.Changed += (_, _) => Refresh();
         Refresh();
     }
 
     public CurrencyPickerViewModel Picker { get; }
+    public string RatesFile => _cost.RatesFile;
+    public string LocalRatesStatus => Display.Localizer.Format("win.rates.localDate", _cost.RatesDate);
+    public string BundledPricesStatus => Display.Localizer["win.prices.local"];
 
     private CostDisplay Display => _cost.Display;
 
@@ -112,12 +107,6 @@ internal sealed class CostPaneViewModel : ObservableObject
 
     /// <summary><c>貨幣, TWD, 新臺幣</c>.</summary>
     public string CurrencyAccessibleName { get => _currencyAccessibleName; private set => Set(ref _currencyAccessibleName, value); }
-
-    public RateStatusView? Rate { get => _rate; private set => Set(ref _rate, value); }
-
-    public RelayCommand RefreshRatesCommand { get; }
-
-    public RelayCommand OpenAttributionCommand { get; }
 
     // Live value
 
@@ -192,33 +181,13 @@ internal sealed class CostPaneViewModel : ObservableObject
 
     // Price table
 
-    public PriceTableView? Prices { get => _prices; private set => Set(ref _prices, value); }
-
-    public bool AutoSyncPrices
-    {
-        get => S.Cost.SyncPrices;
-        set => _settings.Update(s => s with { Cost = s.Cost with { SyncPrices = value } });
-    }
-
-    public RelayCommand CheckPricesCommand { get; }
-
-    public RelayCommand ViewPriceSourceCommand { get; }
-
     /// <summary><c>prices.unknownToday</c>; empty when every model of today has a price.</summary>
     public string UnknownToday { get => _unknownToday; private set => Set(ref _unknownToday, value); }
-
-    // Network
-
-    public bool NetworkOff => !S.NetworkEnabled;
-
-    /// <summary><c>settings.network.offHint</c> on buttons the master switch disables; null while the network is on.</summary>
-    public string? NetworkOffTooltip => S.NetworkEnabled ? null : Display.Localizer["settings.network.offHint"];
 
     public void UpdateLive(SpeedSnapshot snapshot)
     {
         _snapshot = snapshot;
         RefreshSubscriptions();
-        RefreshPrices();
         UnknownToday = CostPaneText.UnknownToday(CostPaneText.UnpricedModels(snapshot.Sources), Display.Localizer);
     }
 
@@ -231,40 +200,20 @@ internal sealed class CostPaneViewModel : ObservableObject
         CurrencyName = display.CurrencyName;
         CurrencyAccessibleName = CostPaneText.CurrencyButtonName(display);
         LiveUnitCostLabel = CostPaneText.LiveUnitCost(display);
-        var rates = _cost.Rates;
-        Rate = RateStatusView.For(display, new RateStatusInput(S.NetworkEnabled, rates.IsRefreshing, rates.FailureReason, rates.IsStale));
-        RefreshPrices();
         RefreshSubscriptions();
         UnknownToday = CostPaneText.UnknownToday(CostPaneText.UnpricedModels(_snapshot.Sources), display.Localizer);
         foreach (var name in new[]
                  {
-                     nameof(LiveUnitIsTokens), nameof(LiveUnitIsCost), nameof(IncludeSubscriptions), nameof(AutoSyncPrices),
+                     nameof(LiveUnitIsTokens), nameof(LiveUnitIsCost), nameof(IncludeSubscriptions),
                      nameof(BarValueTokens), nameof(BarValueCost), nameof(BarValueBoth),
-                     nameof(NetworkOff), nameof(NetworkOffTooltip),
                  })
         {
             OnPropertyChanged(name);
         }
 
+        OnPropertyChanged(nameof(LocalRatesStatus));
+        OnPropertyChanged(nameof(RatesFile));
         CommandManager.InvalidateRequerySuggested();
-    }
-
-    private void RefreshPrices()
-    {
-        var sync = _cost.Prices;
-        var check = new PriceCheckInput(S.NetworkEnabled, sync.IsChecking, Kind(sync.LastCheck), sync.LastCheckVersion, sync.LastCheckReason,
-            sync.NewerSchemaOffered);
-        var table = PriceTableInfo.Of(_cost.Book.Current, PriceBook.Bundled);
-        var view = PriceTableView.For(table, sync.State.LastSuccessMs, check, DateTimeOffset.UtcNow, Display);
-        if (view != _prices)
-        {
-            var commandsChanged = view.CanCheck != _prices?.CanCheck;
-            Prices = view;
-            if (commandsChanged)
-            {
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
     }
 
     private void RefreshSubscriptions()
@@ -306,38 +255,4 @@ internal sealed class CostPaneViewModel : ObservableObject
     private void SetSubscription(SourceKind kind, bool marked) =>
         _settings.Update(s => s with { Cost = s.Cost.WithSubscription(kind, marked) });
 
-    private void CheckPrices()
-    {
-        // NETWORK 1: with the master switch off nothing is requested, manual checks included.
-        if (S.NetworkEnabled && !_cost.Prices.IsChecking)
-        {
-            _cost.Prices.CheckNow();
-        }
-    }
-
-    private static PriceCheckKind Kind(PriceCheckResult result) => result switch
-    {
-        PriceCheckResult.UpToDate => PriceCheckKind.UpToDate,
-        PriceCheckResult.Updated => PriceCheckKind.Updated,
-        PriceCheckResult.NewerSchema => PriceCheckKind.NewerSchema,
-        PriceCheckResult.Failed => PriceCheckKind.Failed,
-        _ => PriceCheckKind.None,
-    };
-
-    private static void OpenHttps(Uri uri)
-    {
-        if (uri.Scheme != Uri.UriSchemeHttps)
-        {
-            return;
-        }
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            AppLog.Warn("Could not open the browser.", ex);
-        }
-    }
 }

@@ -21,12 +21,6 @@ internal interface IAppCommands
 
     void OpenSettings(string? page = null);
 
-    /// <summary>Opens the update window for the available release.</summary>
-    void OpenUpdate();
-
-    /// <summary>Manual check that reports its result in the update window.</summary>
-    void CheckForUpdates();
-
     void Quit();
 
     /// <summary>The master switch; turning it on while every orb is hidden shows them all.</summary>
@@ -85,20 +79,6 @@ internal interface IAppCommands
 
     /// <summary>Asks first (<see cref="OrbMenu.ConfirmRemove"/>), then removes the orb, with undo (<see cref="OrbEditing.Remove"/>).</summary>
     void RemoveOrb(string orbId)
-    {
-    }
-
-    /// <summary>Pauses live reporting for an hour, or until the user resumes (DESIGN 11, Menu).</summary>
-    void PauseReporting(bool indefinitely)
-    {
-    }
-
-    void ResumeReporting()
-    {
-    }
-
-    /// <summary>Opens the reporting service's leaderboard in the browser.</summary>
-    void OpenReportLeaderboard()
     {
     }
 

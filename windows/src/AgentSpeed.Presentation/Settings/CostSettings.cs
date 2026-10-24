@@ -11,7 +11,7 @@ public enum LiveUnit
     Cost,
 }
 
-/// <summary>The cost settings of DESIGN 9 and NETWORK 3 (settings value <c>cost</c>). Immutable; use <c>with</c> to change.</summary>
+/// <summary>The cost settings of DESIGN 9 (settings value <c>cost</c>). Immutable; use <c>with</c> to change.</summary>
 public sealed record CostSettings
 {
     public static CostSettings Default { get; } = new();
@@ -26,9 +26,6 @@ public sealed record CostSettings
     public SourceSet Subscriptions { get; init; } = SourceSet.Empty;
 
     public bool IncludeSubscriptions { get; init; }
-
-    /// <summary>Sync the price table daily (NETWORK 3, <c>prices.autoSync</c>).</summary>
-    public bool SyncPrices { get; init; } = true;
 
     /// <summary>The usage history window's own include-subscriptions choice; null starts from <see cref="IncludeSubscriptions"/>.</summary>
     public bool? HistoryIncludeSubscriptions { get; init; }

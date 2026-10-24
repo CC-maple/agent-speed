@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using AgentSpeed.Core.Money;
-using AgentSpeed.Core.Network;
 
 namespace AgentSpeed.Core.Tests;
 
@@ -197,35 +196,6 @@ public sealed class ExchangeRateTests
         Assert.Equal(1m, accepted.Rate("XXX"));
         Assert.False(accepted.IsStale(7 * ExchangeRates.DayMs));
         Assert.True(accepted.IsStale(7 * ExchangeRates.DayMs + 1));
-    }
-
-    [Fact]
-    public void StoredRatesRoundTripExactly()
-    {
-        var set = new ExchangeRateSet(
-            "cdn.jsdelivr.net", "https://x", 5, 6,
-            Rates(("USD", 1m), ("CNY", MoneyFormatTests.Dec("6.67476008")), ("IDR", MoneyFormatTests.Dec("18040.7")), ("BTC", MoneyFormatTests.Dec("0.0000091"))));
-        var stored = StoredRates.From(set, new Dictionary<string, string> { ["https://x"] = "\"abc\"" });
-        var json = stored.ToJson();
-        var decoded = StoredRates.FromJson(json);
-        Assert.NotNull(decoded);
-        Assert.Equal(set, decoded.ToRateSet());
-        Assert.Equal("\"abc\"", decoded.ETags["https://x"]);
-        var text = Encoding.UTF8.GetString(json);
-        Assert.Contains("\"CNY\": \"6.67476008\"", text, StringComparison.Ordinal);
-        Assert.Contains("\"BTC\": \"0.0000091\"", text, StringComparison.Ordinal);
-        Assert.True(text.IndexOf("\"date\"", StringComparison.Ordinal) < text.IndexOf("\"url\"", StringComparison.Ordinal), "sorted keys");
-    }
-
-    [Fact]
-    public void StoredRatesNeedEveryField()
-    {
-        Assert.Null(StoredRates.FromJson("""{"provider":"p","url":"u","date":1,"fetchedMs":2,"etags":{}}"""u8));
-        Assert.Null(StoredRates.FromJson("""{"provider":"p","url":"u","date":1.5,"fetchedMs":2,"etags":{},"rates":{}}"""u8));
-        Assert.Null(StoredRates.FromJson("""{"provider":"p","url":"u","date":1,"fetchedMs":2,"etags":{},"rates":{"USD":1}}"""u8));
-        Assert.NotNull(StoredRates.FromJson("""{"provider":"p","url":"u","date":1,"fetchedMs":2,"etags":{},"rates":{"USD":"1"}}"""u8));
-        var garbage = StoredRates.FromJson("""{"provider":"p","url":"u","date":1,"fetchedMs":2,"etags":{},"rates":{"USD":"1","TWD":"x","JPY":"-3"}}"""u8)!;
-        Assert.Equal(["USD"], garbage.ToRateSet().Rates.Keys);
     }
 
     internal static Dictionary<string, decimal> Rates(params (string Code, decimal Rate)[] pairs) =>

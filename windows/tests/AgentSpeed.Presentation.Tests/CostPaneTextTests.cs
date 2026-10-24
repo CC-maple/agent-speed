@@ -1,7 +1,6 @@
 using System.Globalization;
 using AgentSpeed.Core;
 using AgentSpeed.Core.Money;
-using AgentSpeed.Core.Network;
 using AgentSpeed.Core.Pricing;
 using AgentSpeed.Presentation.Cost;
 using AgentSpeed.Presentation.Localization;

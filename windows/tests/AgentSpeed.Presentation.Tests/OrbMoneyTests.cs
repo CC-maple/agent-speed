@@ -188,24 +188,20 @@ public class OrbMoneyTests
     {
         var settings = AppSettings.Default with
         {
-            NetworkEnabled = false,
             Cost = new CostSettings
             {
                 Currency = "TWD",
                 LiveUnit = LiveUnit.Cost,
                 Subscriptions = SourceSet.Create([SourceKind.ClaudeCode, SourceKind.Codex]),
                 IncludeSubscriptions = true,
-                SyncPrices = false,
                 HistoryIncludeSubscriptions = false,
             },
         };
         var back = SettingsSerializer.Deserialize(SettingsSerializer.Serialize(settings));
         Assert.Equal(settings.Cost, back.Cost);
-        Assert.False(back.NetworkEnabled);
 
         var defaults = SettingsSerializer.Deserialize("{}");
         Assert.Equal(CostSettings.Default, defaults.Cost);
-        Assert.True(defaults.NetworkEnabled);
 
         var odd = SettingsSerializer.Deserialize("""{"cost":{"currency":"XXX","liveUnit":"joules","subscriptions":["codex","cursor",5]}}""");
         Assert.Equal(("USD", LiveUnit.Tokens, SourceSet.Of(SourceKind.Codex)), (odd.Cost.Currency, odd.Cost.LiveUnit, odd.Cost.Subscriptions));

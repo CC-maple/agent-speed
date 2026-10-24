@@ -33,9 +33,6 @@ internal static class MenuBuilder
     {
         switch (action)
         {
-            case MenuAction.OpenUpdate:
-                commands.OpenUpdate();
-                break;
             case MenuAction.OpenDashboard:
                 commands.ToggleDashboardFromMenu();
                 break;
@@ -44,9 +41,6 @@ internal static class MenuBuilder
                 break;
             case MenuAction.OpenSettings a:
                 commands.OpenSettings(a.Page);
-                break;
-            case MenuAction.CheckForUpdates:
-                commands.CheckForUpdates();
                 break;
             case MenuAction.Quit:
                 commands.Quit();
@@ -107,15 +101,6 @@ internal static class MenuBuilder
                 break;
             case MenuAction.OpenOrbSettings a:
                 commands.OpenOrbSettings(a.OrbId);
-                break;
-            case MenuAction.PauseReporting a:
-                commands.PauseReporting(a.Indefinitely);
-                break;
-            case MenuAction.ResumeReporting:
-                commands.ResumeReporting();
-                break;
-            case MenuAction.OpenLeaderboard:
-                commands.OpenReportLeaderboard();
                 break;
         }
     }

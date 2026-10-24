@@ -1,7 +1,6 @@
 using AgentSpeed.Presentation.Localization;
 using AgentSpeed.Presentation.Settings;
 using AgentSpeed.Presentation.Settings.Orbs;
-using AgentSpeed.Presentation.Updates;
 using static AgentSpeed.Presentation.Menus.MenuParts;
 
 namespace AgentSpeed.Presentation.Menus;
@@ -14,30 +13,18 @@ namespace AgentSpeed.Presentation.Menus;
 public static class QuickMenuModel
 {
     /// <param name="sources">Source availability for the orbs' colour dots.</param>
-    /// <param name="update">The available release; adds the "Update to …" row on top (UPDATES section 4).</param>
     /// <param name="sourceTraffic">Per-process traffic can be measured now (the per-orb traffic submenu says so otherwise).</param>
-    /// <param name="report">Live reporting while it is on and registered: its item with a submenu (DESIGN 11, Menu).</param>
-    public static MenuLevel Build(AppSettings settings, SourceAvailability sources, Localizer localizer, ReleaseInfo? update = null,
-        bool sourceTraffic = true, ReportMenuState? report = null)
+    public static MenuLevel Build(AppSettings settings, SourceAvailability sources, Localizer localizer,
+        bool sourceTraffic = true)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(localizer);
         var orbs = (settings.Orbs ?? OrbsDocument.Fresh()).Orbs;
         var shown = settings.ShowOrbs && orbs.Any(o => o.Visible);
         var entries = new List<MenuEntry>();
-        if (update is not null)
-        {
-            entries.Add(new MenuRow(UpdateText.MenuItem(update, localizer)) { Action = new MenuAction.OpenUpdate(), Icon = new MenuIcon.AccentDot() });
-            entries.Add(MenuSeparator.Instance);
-        }
 
         entries.Add(Command(localizer["menu.dashboard"], new MenuAction.OpenDashboard(), MenuGlyph.Dashboard) with { IsDefault = true });
         entries.Add(Command(localizer["history.open"], new MenuAction.OpenHistory(), MenuGlyph.History));
-        if (report is not null)
-        {
-            entries.Add(MenuSeparator.Instance);
-            entries.Add(ReportMenu(report, localizer));
-        }
 
         entries.Add(MenuSeparator.Instance);
 
@@ -61,38 +48,9 @@ public static class QuickMenuModel
         entries.Add(MenuSeparator.Instance);
         entries.Add(Command(localizer["menu.settings"], new MenuAction.OpenSettings(null), MenuGlyph.Settings));
         entries.Add(Command(localizer["menu.about"], new MenuAction.OpenSettings("about"), MenuGlyph.About));
-        entries.Add(Command(localizer["update.check"] + "…", new MenuAction.CheckForUpdates(), MenuGlyph.CheckForUpdates));
         entries.Add(MenuSeparator.Instance);
         entries.Add(Command(localizer["menu.quit"], new MenuAction.Quit(), MenuGlyph.Quit));
         return new MenuLevel([.. entries]);
-    }
-
-    /// <summary><c>report.menu.on</c> (or <c>report.menu.paused</c>) with pause or resume, the leaderboard and the settings.</summary>
-    public static MenuRow ReportMenu(ReportMenuState report, Localizer localizer)
-    {
-        ArgumentNullException.ThrowIfNull(report);
-        ArgumentNullException.ThrowIfNull(localizer);
-        var rows = new List<MenuEntry>();
-        if (report.Paused)
-        {
-            rows.Add(new MenuRow(localizer["report.resume"]) { Action = new MenuAction.ResumeReporting() });
-        }
-        else
-        {
-            rows.Add(new MenuRow(localizer["report.pause.hour"]) { Action = new MenuAction.PauseReporting(Indefinitely: false) });
-            rows.Add(new MenuRow(localizer["report.pause.indefinite"]) { Action = new MenuAction.PauseReporting(Indefinitely: true) });
-        }
-
-        if (report.HasLeaderboard)
-        {
-            rows.Add(MenuSeparator.Instance);
-            rows.Add(new MenuRow(localizer["report.service.leaderboard"]) { Action = new MenuAction.OpenLeaderboard() });
-        }
-
-        rows.Add(MenuSeparator.Instance);
-        rows.Add(new MenuRow(localizer["report.menu.settings"]) { Action = new MenuAction.OpenSettings("report") });
-        var label = report.Paused ? localizer["report.menu.paused"] : localizer.Format("report.menu.on", report.ServiceName);
-        return new MenuRow(label) { Icon = new MenuIcon.StatusDot(report.Tone), Submenu = new MenuLevel([.. rows]) };
     }
 
     /// <summary>

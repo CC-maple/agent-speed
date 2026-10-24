@@ -30,7 +30,6 @@ using AgentSpeed.Taskbar;
 using AgentSpeed.Theme;
 using AgentSpeed.Titles;
 using AgentSpeed.Tray;
-using AgentSpeed.Updates;
 
 namespace AgentSpeed.App;
 
@@ -74,12 +73,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
     private readonly DashboardViewModel _dashboardModel = new();
     private SettingsWindow? _settingsWindow;
     private SettingsViewModel? _settingsModel;
-    private UpdateService _updates = null!;
-    private UpdateWindow? _updateWindow;
-    private UpdateWindowViewModel? _updateWindowModel;
-    private bool _balloonOpensUpdate;
-    private string? _updateDoneText;
-    private bool _updateDoneShown;
     private DispatcherTimer? _dashboardTimer;
     private bool _dashboardDirty;
     private bool _tooltipShown;
@@ -115,8 +108,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         _loc = new Localizer(Localizer.LoadEmbeddedTable(), ResolveLanguage(Settings.Language));
         LocalizationSource.Instance.Attach(_loc);
         _titles = new TitleThemesService(_ui, _settings, () => _loc);
-        _cost = new CostService(_ui, _settings, _loc, AppPaths.Version, HistoryService.DefaultStorePath);
-        _cost.Prices.TableAccepted += (_, _) => _historyHub?.Refresh();
+        _cost = new CostService(_settings, _loc, HistoryService.DefaultStorePath);
         _cost.Changed += (_, _) => OnCostChanged();
         _dashboardModel.Cost = _cost.Display;
         _traffic = new Traffic.TrafficService(_ui, _settings) { Helper = new Traffic.WindowsTrafficHelperHost() };
@@ -141,7 +133,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
                 _historyService?.ObserveLive(snapshot);
             }
         };
-        CreateReporting();
         _speed = new SpeedModel(_hub, _ui);
         _speed.Configure(Settings.Metric, Settings.Redline);
         _preview = new PreviewService(_hub, _ui);
@@ -156,14 +147,8 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         _tray = new TrayIcon(_shell, _ui);
         _tray.Invoked += (_, _) => ToggleDashboard(TrayAnchor());
         _tray.ContextMenuRequested += (_, _) => ShowMenu();
-        _tray.BalloonClicked += (_, _) => OnBalloonClicked();
         _tray.Show(TrayState());
         phases.Mark("tray");
-
-        _updates = new UpdateService(_ui, _settings, AppPaths.Version);
-        _updates.Changed += (_, _) => OnUpdatesChanged();
-        _updates.NotificationDue += (_, release) => ShowBalloon(UpdateText.AvailableTitle(release, _loc), _loc["update.notification.body"], opensUpdate: true);
-        _updates.RelaunchRequested += (_, _) => Quit();
 
         _menu = new MenuHost();
         _tooltip = new HoverTooltip();
@@ -214,10 +199,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             _theme.EnableFluent();
             AutoStart.Refresh();
             AppLog.Info($"Fluent theme ready in {fluent.ElapsedMilliseconds} ms.");
-            StartUpdates();
-            _cost.Start();
             _traffic.Start();
-            StartReporting();
             if (_launch.DemoSpeedValues is { Count: > 0 } speeds)
             {
                 HeroStats.Enabled = true;
@@ -277,11 +259,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
                         return _dashboard is { IsShown: true } shown ? shown.Content as FrameworkElement : null;
                     }
 
-                    if (ReportCaptureTarget(target) is { } reportTarget)
-                    {
-                        return reportTarget;
-                    }
-
                     if (target == "history")
                     {
                         // An open window is captured as the ops left it (op history-all, op history-<source>).
@@ -331,23 +308,11 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             {
                 StartHistoryPreview();
             }
-            else if (_launch.ReportE2E is null || Environment.GetEnvironmentVariable("AGENT_SPEED_REPORT_E2E_HISTORY") == "1")
+            else
             {
                 ScheduleHistoryStart();
             }
         });
-    }
-
-    public void OpenUpdate()
-    {
-        _updates.Present();
-        ShowUpdateWindow();
-    }
-
-    public void CheckForUpdates()
-    {
-        _ = _updates.CheckAsync(manual: true);
-        ShowUpdateWindow();
     }
 
     public void ToggleDashboardFromMenu() => ShowDashboard(CursorAnchor());
@@ -380,8 +345,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         if (_settingsWindow is null)
         {
             _settingsModel ??= new SettingsViewModel(_settings, _preview, _loc, initial => SettingsWindow.PickFolder(_settingsWindow, initial),
-                _updates, OpenUpdate, () => OpenHistory(), ConfirmClearHistory, ClearHistory, _cost) { TitleService = _titles };
-            _settingsModel.Report ??= CreateReportPane();
+                () => OpenHistory(), ConfirmClearHistory, ClearHistory, _cost) { TitleService = _titles };
             _settingsModel.Traffic ??= new TrafficPaneViewModel(_settings, _traffic, _traffic.Helper, _loc,
                 () => _settingsWindow is { } window ? new System.Windows.Interop.WindowInteropHelper(window).Handle : 0,
                 ConfirmRemoveHelper);
@@ -428,17 +392,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
 
         _quitting = true;
         AppLog.Info("Quitting.");
-        // One leaving report when it can be sent within a second (REPORTING 7.1), then the app exits.
-        if (_report is { } report)
-        {
-            report.PrepareToQuit(() =>
-            {
-                Shutdown();
-                _app.Shutdown();
-            });
-            return;
-        }
-
         Shutdown();
         _app.Shutdown();
     }
@@ -465,11 +418,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         Try(() => _historyStartFallback?.Stop());
         Try(() => _history?.Dispose());
         Try(() => _historyService?.Dispose());
-        Try(() => _report?.Dispose());
-        Try(() => _consentDialog?.CloseFromController());
-        Try(() => _previewWindow?.Close());
         Try(() => _traffic?.Dispose());
-        Try(() => _cost.Dispose());
         Try(() => _settings.Flush());
         Try(() => _preview.Stop());
         Try(() => _pinnedSpeeds?.Dispose());
@@ -483,8 +432,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         Try(() => _orbs?.Dispose());
         Try(() => _dashboard?.CloseForShutdown());
         Try(() => _settingsWindow?.Close());
-        Try(() => _updateWindow?.Close());
-        Try(() => _updates?.Dispose());
         Try(() => _speed.Dispose());
         Try(() => _theme.Dispose());
         Try(() => _shell?.Dispose());
@@ -504,12 +451,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
 
     private void StartMonitor()
     {
-        if (_launch.ReportE2E is not null)
-        {
-            AppLog.Info("--report-e2e: the live monitor stays off; a synthetic engine feed drives live reporting.");
-            return;
-        }
-
         try
         {
             _monitor = new LiveMonitor(_hub, Settings.ToMonitorConfiguration(), _cost.Book);
@@ -840,8 +781,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         }
 
         HideTooltip();
-        _menu.Show(AppMenu.Build(this, Settings, _loc, _updates.Available, SourceAvailability.From(_speed.Snapshot.Sources), SourceTrafficAvailable,
-            ReportMenuState()));
+        _menu.Show(AppMenu.Build(this, Settings, _loc, SourceAvailability.From(_speed.Snapshot.Sources), SourceTrafficAvailable));
     }
 
     private void ToggleDashboard(POINT anchor)
@@ -884,21 +824,14 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             _dashboard.OrbToggled += (_, visible) => _settings.Update(s => s.WithShowOrbs(visible));
             _dashboard.RangeChanged += (_, seconds) => _settings.Update(s => s with { ChartSeconds = seconds });
             _dashboard.AgentsExpandedChanged += (_, expanded) => _settings.Update(s => s with { AgentsExpanded = expanded });
-            _dashboard.UpdateRequested += (_, _) => OpenUpdate();
             _dashboard.UnitToggleRequested += (_, _) => ToggleLiveUnit();
             _dashboard.TrafficHistoryRequested += (_, source) => ShowHistory(source, traffic: true);
             _dashboard.TrafficSettingsRequested += (_, _) => OpenSettings("traffic");
-            AttachReporting(_dashboard);
             _dashboard.IsVisibleChanged += (_, _) =>
             {
                 if (_dashboard?.IsVisible != true)
                 {
                     _dashboardTimer?.Stop();
-                    if (_updateDoneShown)
-                    {
-                        _updateDoneText = null;
-                        _dashboard?.SetUpdateDone(null);
-                    }
                 }
             };
             ConfigureOrb();
@@ -907,11 +840,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         _dashboard.SetRange(Settings.ChartSeconds);
         _dashboard.SetOrbVisible(Settings.ShowOrbs);
         _dashboard.SetPreviewing(_preview.IsRunning);
-        _dashboard.SetUpdate(UpdatePillText());
-        _dashboard.SetUpdateDone(_updateDoneText);
-        _updateDoneShown = _updateDoneText is not null;
-        ShowReportInvitation();
-        RefreshReportSurfaces();
         _dashboard.ApplyBackground();
         RefreshDashboard();
         _dashboard.ShowNear(anchor, _theme.ReduceMotion);
@@ -1014,18 +942,11 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             return;
         }
 
-        if (previous with { Report = current.Report } == current)
-        {
-            // Live reporting's own state (DESIGN 11, Storage); its surfaces follow ReportController.Changed.
-            return;
-        }
-
         if (previous.Appearance != current.Appearance)
         {
             _theme.Mode = current.Appearance;
         }
 
-        _updates.OnSettingsChanged(previous, current);
         _cost.OnSettingsChanged(previous, current);
         _traffic.OnSettingsChanged(previous, current);
         if (previous.Traffic.IncludeTools != current.Traffic.IncludeTools || previous.EnabledSourceSet() != current.EnabledSourceSet())
@@ -1085,8 +1006,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
     /// <summary>
     /// Developer capture operations for the title themes (only with <c>--capture-dir</c>): <c>page-&lt;key&gt;</c>,
     /// <c>theme-&lt;preset id in lowercase&gt;</c>, <c>theme-custom</c> (a sample custom set), <c>lang-&lt;code&gt;</c>,
-    /// <c>appearance-&lt;auto|light|dark&gt;</c>, <c>dashboard</c>, and live reporting's <c>report-enable</c>, <c>report-start</c>,
-    /// <c>report-preview</c>, <c>report-cancel</c>.
+    /// <c>appearance-&lt;auto|light|dark&gt;</c> and <c>dashboard</c>.
     /// </summary>
     private void RunTitleCaptureOperation(string op)
     {
@@ -1132,23 +1052,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         else if (op == "dashboard")
         {
             ShowDashboard(CursorAnchor());
-        }
-        else if (op == "report-enable")
-        {
-            _report?.SetEnabled(true);
-        }
-        else if (op == "report-start")
-        {
-            _report?.StartReporting();
-        }
-        else if (op == "report-preview")
-        {
-            OpenReportPreview();
-        }
-        else if (op == "report-cancel")
-        {
-            _report?.CancelConsent();
-            _previewWindow?.Close();
         }
         else if (op == "history-all")
         {
@@ -1211,7 +1114,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         UpdateTaskbar();
         _tray?.Update(TrayState());
         _dashboard?.ApplyBackground();
-        _dashboard?.ReportInvitation.SetAppearance(_theme.IsDark, _theme.HighContrast, _theme.ReduceMotion);
         _history?.OnThemeChanged();
         if (_settingsModel is not null)
         {
@@ -1233,12 +1135,8 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         }
 
         _settingsModel?.Relocalize(_loc);
-        _settingsModel?.Report?.SetLocalizer(_loc);
-        RefreshReportSurfaces();
         _orbs?.Relocalize(_loc);
-        _updateWindowModel?.Relocalize(_loc);
         _history?.OnLanguageChanged();
-        _dashboard?.SetUpdate(UpdatePillText());
         ConfigureOrb();
         UpdateTaskbar();
         _tray?.Update(TrayState());
@@ -1262,92 +1160,6 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         if (area is "WindowMetrics" or "TraySettings")
         {
             _tray?.Refresh();
-        }
-    }
-
-    // ---- Updates ----
-
-    private void StartUpdates()
-    {
-        _updates.Start();
-        _ = Task.Run(UpdateRelaunch.CleanupLeftovers);
-        if (_launch.AfterUpdate && !string.Equals(_launch.PreviousVersion, AppPaths.Version, StringComparison.Ordinal))
-        {
-            _updateDoneText = _loc.Format("update.done", AppPaths.Version);
-            ShowBalloon(_loc["app.name"], _updateDoneText, opensUpdate: false);
-        }
-
-        if (_launch.CheckUpdatesNow)
-        {
-            _ = CheckNowAtStartupAsync();
-        }
-    }
-
-    /// <summary>Development flag <c>--check-updates-now</c>: a manual check that opens the window when something is found.</summary>
-    private async Task CheckNowAtStartupAsync()
-    {
-        AppLog.Info("--check-updates-now: checking for updates.");
-        try
-        {
-            await _updates.CheckAsync(manual: true);
-            if (_updates.Available is not null && !_quitting)
-            {
-                OpenUpdate();
-            }
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or IOException)
-        {
-            AppLog.Warn($"--check-updates-now failed: {UpdateLog.Describe(ex)}");
-        }
-    }
-
-    private void ShowUpdateWindow()
-    {
-        if (_quitting)
-        {
-            return;
-        }
-
-        _dashboard?.Dismiss();
-        if (_updateWindow is null)
-        {
-            _updateWindowModel = new UpdateWindowViewModel(_updates, _loc);
-            _updateWindow = new UpdateWindow(_updateWindowModel) { Language = AppFonts.XmlLanguageFor(_loc.LanguageCode) };
-            _updateWindow.Closed += (_, _) =>
-            {
-                _updateWindow = null;
-                _updateWindowModel = null;
-            };
-        }
-
-        if (!_updateWindow.IsVisible)
-        {
-            _updateWindow.Show();
-        }
-
-        if (_updateWindow.WindowState == WindowState.Minimized)
-        {
-            _updateWindow.WindowState = WindowState.Normal;
-        }
-
-        _updateWindow.Activate();
-    }
-
-    private void OnUpdatesChanged() => _dashboard?.SetUpdate(UpdatePillText());
-
-    private string? UpdatePillText() => _updates.Available is { } release ? UpdateText.Pill(release, _loc) : null;
-
-    private void ShowBalloon(string title, string text, bool opensUpdate)
-    {
-        _balloonOpensUpdate = opensUpdate;
-        _tray?.ShowBalloon(title, text);
-    }
-
-    private void OnBalloonClicked()
-    {
-        if (_balloonOpensUpdate && _updates.Available is not null)
-        {
-            OpenUpdate();
         }
     }
 
@@ -1377,8 +1189,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
 
         var menu = kind == "menu-orb" && Settings.Orbs.Orbs.FirstOrDefault() is { } orb
             ? OrbMenu.Build(this, orb.Id, Settings, SourceAvailability.From(_speed.Snapshot.Sources), _loc, SourceTrafficAvailable)
-            : AppMenu.Build(this, Settings, _loc, _updates.Available, SourceAvailability.From(_speed.Snapshot.Sources), SourceTrafficAvailable,
-                ReportMenuState());
+            : AppMenu.Build(this, Settings, _loc, SourceAvailability.From(_speed.Snapshot.Sources), SourceTrafficAvailable);
         if (menu is null)
         {
             return null;

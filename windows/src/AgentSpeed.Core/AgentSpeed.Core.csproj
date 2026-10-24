@@ -19,4 +19,8 @@
     <InternalsVisibleTo Include="AgentSpeed.Core.Tests" />
     <InternalsVisibleTo Include="AgentSpeed.Probe" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Network/**/*.cs;Reporting/**/*.cs" />
+    <Compile Include="Reporting/ReportLiveFacts.cs;Reporting/ReportLedger.cs" />
+  </ItemGroup>
 </Project>

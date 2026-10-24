@@ -27,4 +27,7 @@
   <ItemGroup>
     <None Include="../../../spec/fixtures/**/*" LinkBase="spec/fixtures" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="HttpFetcherTests.cs;NetworkTestSupport.cs;ExchangeRateSyncTests.cs;PriceTableSyncTests.cs;Reporting/**/*.cs" />
+  </ItemGroup>
 </Project>

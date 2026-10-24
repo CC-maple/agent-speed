@@ -8,12 +8,10 @@ using AgentSpeed.Presentation.Heat;
 using AgentSpeed.Presentation.Localization;
 using AgentSpeed.Presentation.Settings;
 using AgentSpeed.Presentation.Titles;
-using AgentSpeed.Presentation.Updates;
 using AgentSpeed.Services;
 using AgentSpeed.Settings.TitleThemes;
 using AgentSpeed.Taskbar;
 using AgentSpeed.Titles;
-using AgentSpeed.Updates;
 
 namespace AgentSpeed.Settings;
 
@@ -89,7 +87,6 @@ internal sealed class SettingsViewModel : ObservableObject
     private readonly SettingsService _settings;
     private readonly PreviewService _preview;
     private readonly Func<string?, string?> _pickFolder;
-    private readonly UpdateService _updates;
     private Localizer _loc;
     private NavItem _selected;
     private bool _syncing;
@@ -104,15 +101,14 @@ internal sealed class SettingsViewModel : ObservableObject
     /// <param name="openHistory">Opens the Usage History window for all sources.</param>
     /// <param name="confirmClearHistory">Asks the user to confirm clearing the history; true to go ahead.</param>
     /// <param name="clearHistory">Deletes the stored daily history so it is recomputed from the logs.</param>
-    /// <param name="cost">The cost feature: Settings → Cost and the network master switch in About.</param>
+    /// <param name="cost">The local cost feature shown in Settings → Cost.</param>
     public SettingsViewModel(SettingsService settings, PreviewService preview, Localizer localizer, Func<string?, string?> pickFolder,
-        UpdateService updates, Action openUpdate, Action openHistory, Func<bool> confirmClearHistory, Action clearHistory, CostService cost)
+        Action openHistory, Func<bool> confirmClearHistory, Action clearHistory, CostService cost)
     {
         _settings = settings;
         _preview = preview;
         _loc = localizer;
         _pickFolder = pickFolder;
-        _updates = updates;
         Cost = new CostPaneViewModel(settings, cost);
 
         Pages.Add(new NavItem("general", "", "settings.general"));
@@ -121,7 +117,6 @@ internal sealed class SettingsViewModel : ObservableObject
         Pages.Add(new NavItem("effects", "", "settings.effects"));
         Pages.Add(new NavItem("cost", "", "settings.cost"));
         Pages.Add(new NavItem("traffic", "", "settings.traffic"));
-        Pages.Add(new NavItem("report", "\uEC05", "settings.report"));
         Pages.Add(new NavItem("sources", "", "settings.sources"));
         Pages.Add(new NavItem("about", "", "settings.about"));
         _selected = Pages[0];
@@ -170,12 +165,7 @@ internal sealed class SettingsViewModel : ObservableObject
                 clearHistory();
             }
         });
-        OpenRepositoryCommand = new RelayCommand(() => OpenUrl(AppPaths.RepositoryUrl));
-        OpenLicenseCommand = new RelayCommand(() => OpenUrl(AppPaths.LicenseUrl));
         OpenLogsCommand = new RelayCommand(OpenLogs);
-        CheckForUpdatesCommand = new RelayCommand(() => _ = _updates.CheckAsync(manual: true), () => !_updates.Status.IsBusy && _updates.NetworkEnabled);
-        OpenUpdateCommand = new RelayCommand(openUpdate);
-        _updates.Changed += (_, _) => OnUpdatesChanged();
 
         _settings.Changed += (_, _) => Sync();
         _preview.StateChanged += (_, _) =>
@@ -209,15 +199,6 @@ internal sealed class SettingsViewModel : ObservableObject
     }
 
     private TrafficPaneViewModel? _traffic;
-
-    /// <summary>Settings → API (DESIGN 11); set by the app.</summary>
-    public ReportPaneViewModel? Report
-    {
-        get => _report;
-        set => Set(ref _report, value);
-    }
-
-    private ReportPaneViewModel? _report;
 
     /// <summary>The speed titles that scale with the redline, climbing (DESIGN section 5, General).</summary>
     public ObservableCollection<TitleLadderRow> TitleLadder { get; } = new();
@@ -266,7 +247,6 @@ internal sealed class SettingsViewModel : ObservableObject
 
     public RelayCommand PreviewCommand { get; }
 
-
     public RelayCommand ChangeCodexCommand { get; }
 
     public RelayCommand ChangeClaudeCommand { get; }
@@ -308,15 +288,7 @@ internal sealed class SettingsViewModel : ObservableObject
     /// <summary>Asks for confirmation, then clears the stored history.</summary>
     public RelayCommand ClearHistoryCommand { get; }
 
-    public RelayCommand OpenRepositoryCommand { get; }
-
-    public RelayCommand OpenLicenseCommand { get; }
-
     public RelayCommand OpenLogsCommand { get; }
-
-    public RelayCommand CheckForUpdatesCommand { get; }
-
-    public RelayCommand OpenUpdateCommand { get; }
 
     private AppSettings S => _settings.Current;
 
@@ -413,7 +385,6 @@ internal sealed class SettingsViewModel : ObservableObject
     };
 
     public bool HasTaskbarStatus => !string.IsNullOrEmpty(TaskbarStatus);
-
 
     public int EffectsIndex
     {
@@ -537,83 +508,7 @@ internal sealed class SettingsViewModel : ObservableObject
 
     public string VersionText => _loc.Format("settings.about.version", AppPaths.Version);
 
-    public string UpdateCurrentText => UpdateText.Current(_updates.CurrentVersion, _loc);
-
-    /// <summary>Up to date, the available version, checking, progress, or the last error (UPDATES section 4).</summary>
-    public string UpdateStatusText => _updates.Status.Phase == UpdatePhase.Idle && _updates.Available is { } release
-        ? UpdateText.AvailableTitle(release, _loc)
-        : UpdateText.StatusLine(_updates.Status, _loc);
-
-    public bool HasUpdateStatus => UpdateStatusText.Length > 0;
-
-    public bool UpdateStatusIsError => _updates.Status.IsFailed;
-
-    public bool UpdateStatusIsAvailable => !UpdateStatusIsError && IsUpdateAvailable;
-
-    public string UpdateLastCheckedText => UpdateText.LastChecked(S.LastUpdateCheck, DateTimeOffset.UtcNow, _loc);
-
-    public bool HasUpdateLastChecked => S.LastUpdateCheck is not null;
-
-    /// <summary>A release is on offer or being installed: the button opens the update window instead of checking again.</summary>
-    public bool IsUpdateAvailable => UpdateRelease is not null;
-
-    public bool ShowCheckButton => !IsUpdateAvailable;
-
-    public string UpdateButtonText => UpdateRelease is { } release ? UpdateText.MenuItem(release, _loc) : string.Empty;
-
-    /// <summary>The network master switch (NETWORK 1): off, no update, price or rate request is made.</summary>
-    public bool NetworkEnabled
-    {
-        get => S.NetworkEnabled;
-        set => Apply(s => s with { NetworkEnabled = value });
-    }
-
-    public bool NetworkOff => !S.NetworkEnabled;
-
-    /// <summary><c>settings.network.offHint</c> on the controls the master switch disables; null while it is on.</summary>
-    public string? NetworkOffTooltip => S.NetworkEnabled ? null : _loc["settings.network.offHint"];
-
-    public string UpdateAutoHint => S.NetworkEnabled ? _loc["update.auto.hint"] : _loc["settings.network.offHint"];
-
-    public bool AutoCheckUpdates
-    {
-        get => S.AutoCheckUpdates;
-        set => Apply(s => s with { AutoCheckUpdates = value });
-    }
-
-    private ReleaseInfo? UpdateRelease => _updates.Status is { Release: { } release } status
-                                          && (status.IsInstalling || status.Phase is UpdatePhase.Available or UpdatePhase.InstallFailed)
-        ? release
-        : _updates.Available;
-
     public string WindowTitle => $"{_loc["app.name"]} · {_loc["settings.title"]}";
-
-    private string? _reportHost;
-
-    /// <summary>
-    /// About while live reporting is on (DESIGN 11, Menu, dashboard and About): the statements that would claim nothing is sent
-    /// are replaced, and <c>privacy.report</c> follows them. <paramref name="host"/> is the destination; null while off.
-    /// </summary>
-    public void SetReporting(string? host)
-    {
-        if (_reportHost == host)
-        {
-            return;
-        }
-
-        _reportHost = host;
-        OnPropertyChanged(nameof(PrivacyStatement));
-        OnPropertyChanged(nameof(PrivacyTraffic));
-        OnPropertyChanged(nameof(NetworkHint));
-    }
-
-    public string PrivacyStatement => _reportHost is { } host ? _loc.Format("privacy.statement.report", host) : _loc["privacy.statement"];
-
-    public string PrivacyTraffic => _loc[_reportHost is null ? "privacy.traffic" : "privacy.traffic.report"];
-
-    public string PrivacyReport => _loc["privacy.report"];
-
-    public string NetworkHint => _loc[_reportHost is null ? "settings.network.hint" : "settings.network.hint.report"];
 
     public void Relocalize(Localizer localizer)
     {
@@ -664,7 +559,6 @@ internal sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(AntigravityPath));
         OnPropertyChanged(nameof(WorkBuddyStatus));
         OnPropertyChanged(nameof(WorkBuddyAiStatus));
-        OnPropertyChanged(nameof(UpdateLastCheckedText));
     }
 
     public void Select(string key)
@@ -673,21 +567,6 @@ internal sealed class SettingsViewModel : ObservableObject
         {
             SelectedPage = page;
         }
-    }
-
-    private void OnUpdatesChanged()
-    {
-        foreach (var name in new[]
-                 {
-                     nameof(UpdateStatusText), nameof(HasUpdateStatus), nameof(UpdateStatusIsError), nameof(UpdateStatusIsAvailable),
-                     nameof(UpdateLastCheckedText), nameof(HasUpdateLastChecked), nameof(IsUpdateAvailable), nameof(ShowCheckButton),
-                     nameof(UpdateButtonText),
-                 })
-        {
-            OnPropertyChanged(name);
-        }
-
-        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
     }
 
     private string StatusFor(SourceKind kind)
@@ -760,23 +639,6 @@ internal sealed class SettingsViewModel : ObservableObject
         }
 
         _settings.Update(s => apply(s, picked));
-    }
-
-    private static void OpenUrl(string url)
-    {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
-        {
-            return;
-        }
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            AppLog.Warn("Could not open the browser.", ex);
-        }
     }
 
     private static void OpenLogs()
