@@ -94,6 +94,8 @@ internal sealed partial class DashboardWindow : Window
 
     public event EventHandler? QuitRequested;
 
+    public event EventHandler? RestartRequested;
+
     public event EventHandler<bool>? OrbToggled;
 
     public event EventHandler<int>? RangeChanged;
@@ -646,6 +648,8 @@ internal sealed partial class DashboardWindow : Window
         Dismiss();
         HistoryRequested?.Invoke(this, source);
     }
+
+    private void OnRestart(object sender, RoutedEventArgs e) => RestartRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnQuit(object sender, RoutedEventArgs e) => QuitRequested?.Invoke(this, EventArgs.Empty);
 

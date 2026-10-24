@@ -575,6 +575,10 @@
                                 ToolTip="{loc:Loc settings.title}" AutomationProperties.Name="{loc:Loc settings.title}">
                             <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE713;" />
                         </Button>
+                        <Button x:Name="RestartButton" Style="{StaticResource SubtleButton}" Click="OnRestart" Margin="2,0,0,0"
+                                ToolTip="{loc:Loc win.app.restart}" AutomationProperties.Name="{loc:Loc win.app.restart}">
+                            <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE777;" />
+                        </Button>
                         <Button Style="{StaticResource SubtleButton}" Click="OnQuit" Margin="2,0,0,0"
                                 ToolTip="{loc:Loc menu.quit}" AutomationProperties.Name="{loc:Loc menu.quit}">
                             <TextBlock Style="{StaticResource SymbolIcon}" Text="&#xE7E8;" />

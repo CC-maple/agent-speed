@@ -335,5 +335,17 @@
     "zh-Hant": "此 Windows 版本讀取本機 agent 記錄，不發起網路請求。已移除更新、線上同步和即時回報功能。",
     "zh-Hans": "此 Windows 版本读取本地 agent 日志，不发起网络请求。已移除更新、在线同步和实时上报功能。",
     "ja": "この Windows 版はローカルの agent ログを読み取り、ネットワーク要求を行いません。更新、オンライン同期、リアルタイム送信は削除されています。"
+  },
+  "win.app.restart": {
+    "en": "Restart Agent Speed",
+    "zh-Hant": "重新啟動 Agent Speed",
+    "zh-Hans": "重启 Agent Speed",
+    "ja": "Agent Speed を再起動"
+  },
+  "win.app.restartFailed": {
+    "en": "Agent Speed could not restart. Please launch the application again. See the local logs for details.",
+    "zh-Hant": "Agent Speed 無法重新啟動。請手動啟動程式，詳細原因請查看本機日誌。",
+    "zh-Hans": "Agent Speed 无法重启。请手动启动程序，详细原因请查看本地日志。",
+    "ja": "Agent Speed を再起動できませんでした。アプリを手動で起動してください。詳細はローカルログを確認してください。"
   }
 }

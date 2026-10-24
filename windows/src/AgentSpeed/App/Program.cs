@@ -8,6 +8,33 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        var exitCode = Run(args, out var restartRequested);
+        // Run has disposed the controller and released the single-instance mutex before relaunching.
+        if (restartRequested)
+        {
+            try
+            {
+                AppRestart.Start();
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+            {
+                AppLog.Error("Restart failed.", ex);
+                var loc = new AgentSpeed.Presentation.Localization.Localizer(
+                    AgentSpeed.Presentation.Localization.Localizer.LoadEmbeddedTable(),
+                    AgentSpeed.Presentation.Localization.LanguageResolver.Resolve(
+                        AgentSpeed.Presentation.Localization.AppLanguage.System, System.Globalization.CultureInfo.CurrentUICulture));
+                System.Windows.MessageBox.Show(loc["win.app.restartFailed"], loc["app.name"],
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return 1;
+            }
+        }
+
+        return exitCode;
+    }
+
+    private static int Run(string[] args, out bool restartRequested)
+    {
+        restartRequested = false;
         if (Traffic.HelperExtraction.TryRun(args) is { } extracted)
         {
             return extracted;
@@ -62,6 +89,7 @@ internal static class Program
             }
         };
         var exitCode = app.Run();
+        restartRequested = controller.RestartRequested;
         AppLog.Info("Agent Speed exited.");
         return exitCode;
     }

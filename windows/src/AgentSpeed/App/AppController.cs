@@ -383,6 +383,20 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
         _settingsWindow.Activate();
     }
 
+    public bool RestartRequested { get; private set; }
+
+    private void Restart()
+    {
+        if (_quitting)
+        {
+            return;
+        }
+
+        RestartRequested = true;
+        AppLog.Info("Restart requested.");
+        Quit();
+    }
+
     public void Quit()
     {
         if (_quitting)
@@ -821,6 +835,7 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             _dashboard.SourcesRequested += (_, _) => OpenSettings("sources");
             _dashboard.HistoryRequested += (_, source) => OpenHistory(source);
             _dashboard.QuitRequested += (_, _) => Quit();
+            _dashboard.RestartRequested += (_, _) => Restart();
             _dashboard.OrbToggled += (_, visible) => _settings.Update(s => s.WithShowOrbs(visible));
             _dashboard.RangeChanged += (_, seconds) => _settings.Update(s => s with { ChartSeconds = seconds });
             _dashboard.AgentsExpandedChanged += (_, expanded) => _settings.Update(s => s with { AgentsExpanded = expanded });
