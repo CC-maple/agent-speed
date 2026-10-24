@@ -23,6 +23,9 @@ public sealed record TrafficSettings
     /// <summary><c>settings.traffic.enabled</c>: off stops sampling and the helper connection at once.</summary>
     public bool Enabled { get; init; } = true;
 
+    /// <summary>Opt-in per-agent traffic. Applied once at startup; changes require restarting the app.</summary>
+    public bool AgentTrafficEnabled { get; init; }
+
     /// <summary>Displayed source and agent traffic includes the tools the agents run (METRICS 10.5); stored data is unchanged.</summary>
     public bool IncludeTools { get; init; } = true;
 

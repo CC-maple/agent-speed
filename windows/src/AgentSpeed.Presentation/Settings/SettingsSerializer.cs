@@ -151,6 +151,7 @@ public static class SettingsSerializer
 
             w.WriteStartObject("traffic");
             w.WriteBoolean("enabled", s.Traffic.Enabled);
+            w.WriteBoolean("agentTrafficEnabled", s.Traffic.AgentTrafficEnabled);
             w.WriteBoolean("includeTools", s.Traffic.IncludeTools);
             w.WriteString("unit", s.Traffic.Bits ? "bits" : "bytes");
             w.WriteString("bar", TrafficSettings.Key(s.Traffic.Bar));
@@ -240,6 +241,7 @@ public static class SettingsSerializer
             Cost = ReadCost(cost),
             Traffic = new TrafficSettings
             {
+                AgentTrafficEnabled = ReadBool(traffic, "agentTrafficEnabled", d.Traffic.AgentTrafficEnabled),
                 Enabled = ReadBool(traffic, "enabled", TrafficSettings.Default.Enabled),
                 IncludeTools = ReadBool(traffic, "includeTools", TrafficSettings.Default.IncludeTools),
                 Unit = ReadString(traffic, "unit") == "bits" ? TrafficUnit.Bits : TrafficUnit.Bytes,

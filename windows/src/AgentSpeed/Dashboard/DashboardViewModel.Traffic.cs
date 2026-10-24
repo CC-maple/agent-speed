@@ -60,6 +60,22 @@ internal sealed partial class DashboardViewModel
     private bool _trafficCanExpand;
     private string _trafficExpandText = string.Empty;
     private Localizer? _trafficLoc;
+    private bool _agentTrafficRequested;
+    private bool _agentTrafficActive;
+    private bool _agentTrafficInstalled;
+    private string _agentTrafficStatus = string.Empty;
+
+    public bool AgentTrafficRequested { get => _agentTrafficRequested; private set => Set(ref _agentTrafficRequested, value); }
+
+    public string AgentTrafficStatus { get => _agentTrafficStatus; private set => Set(ref _agentTrafficStatus, value); }
+
+    public void ConfigureAgentTraffic(bool requested, bool active, bool installed, Localizer loc)
+    {
+        AgentTrafficRequested = requested;
+        _agentTrafficActive = active;
+        _agentTrafficInstalled = installed;
+        AgentTrafficStatus = loc[AgentTrafficOption.StatusKey(requested, active, installed, _traffic.ProcessState.Kind)];
+    }
 
     /// <summary>The section shows while measuring is on (DESIGN 10, Dashboard).</summary>
     public bool TrafficShown { get => _trafficShown; private set => Set(ref _trafficShown, value); }
@@ -95,6 +111,7 @@ internal sealed partial class DashboardViewModel
     public void UpdateTraffic(TrafficSnapshot snapshot, bool enabled, bool includeTools, bool bits, Localizer loc)
     {
         _traffic = snapshot;
+        ConfigureAgentTraffic(_agentTrafficRequested, _agentTrafficActive, _agentTrafficInstalled, loc);
         _trafficLoc = loc;
         _trafficIncludeTools = includeTools;
         _trafficBits = bits;
@@ -112,6 +129,16 @@ internal sealed partial class DashboardViewModel
         TrafficUnavailable = view.Unavailable;
         TrafficHelperButton = view.HelperButton;
         TrafficCaption = view.Caption;
+        if (snapshot.ProcessState.UnavailableReason == TrafficUnavailableReason.HelperMissing)
+        {
+            TrafficUnavailable = null; // The compact status and install link already explain this state.
+        }
+        if (!_agentTrafficRequested || !_agentTrafficActive)
+        {
+            TrafficUnavailable = null;
+            TrafficHelperButton = _agentTrafficRequested && !_agentTrafficInstalled ? loc["traffic.helper.install"] : null;
+            TrafficCaption = string.Empty;
+        }
         var visible = _trafficExpanded ? view.Rows : view.Rows.Take(DashboardTraffic.CollapsedRows).ToList();
         while (TrafficRows.Count > visible.Count)
         {
@@ -142,8 +169,8 @@ internal sealed partial class DashboardViewModel
             item.AccessibleName = row.AccessibleName;
         }
 
-        TrafficHasRows = view.Rows.Count > 0 && view.Unavailable is null;
-        TrafficCanExpand = view.Rows.Count > DashboardTraffic.CollapsedRows;
+        TrafficHasRows = _agentTrafficRequested && _agentTrafficActive && view.Rows.Count > 0 && view.Unavailable is null;
+        TrafficCanExpand = TrafficHasRows && view.Rows.Count > DashboardTraffic.CollapsedRows;
         TrafficExpandText = _trafficExpanded ? loc["agents.collapse"] : loc.Format("traffic.expand", view.Rows.Count - DashboardTraffic.CollapsedRows);
     }
 

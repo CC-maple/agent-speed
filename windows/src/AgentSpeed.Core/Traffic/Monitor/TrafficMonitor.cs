@@ -18,7 +18,7 @@ public sealed class TrafficMonitor : IDisposable
 
     /// <summary>The Windows monitor (process table, interface counters and the helper connection).</summary>
     /// <param name="storePath">The history database (METRICS 10.9); null for the default.</param>
-    public static TrafficMonitor CreateForWindows(TrafficHub hub, string? storePath = null, Action<string>? log = null)
+    public static TrafficMonitor CreateForWindows(TrafficHub hub, string? storePath = null, Action<string>? log = null, bool agentTrafficEnabled = true)
     {
         ArgumentNullException.ThrowIfNull(hub);
         if (!OperatingSystem.IsWindows())
@@ -31,7 +31,7 @@ public sealed class TrafficMonitor : IDisposable
             TrafficPlatform.CurrentWindows(),
             new Windows.ProcessReader(),
             new Windows.MachineCounters(),
-            Windows.CounterSources.Create(log),
+            agentTrafficEnabled ? Windows.CounterSources.Create(log) : null,
             hub.Publish,
             hub.PublishDays,
             log);

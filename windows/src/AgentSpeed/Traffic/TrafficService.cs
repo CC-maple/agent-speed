@@ -28,10 +28,13 @@ internal sealed class TrafficService : IDisposable
     public TrafficService(Dispatcher dispatcher, SettingsService settings)
     {
         _settings = settings;
+        AgentTrafficActive = settings.Current.Traffic.AgentTrafficEnabled;
         Hub = new TrafficHub(new DispatcherSynchronizationContext(dispatcher));
     }
 
     public TrafficHub Hub { get; }
+
+    public bool AgentTrafficActive { get; }
 
     /// <summary>
     /// The live traffic as every surface shows it: sources turned off in Settings → Data Sources left out (METRICS 10.5,
@@ -48,6 +51,10 @@ internal sealed class TrafficService : IDisposable
                 _visibleFrom = raw;
                 _visibleFor = enabled;
                 _visible = TrafficVisibility.Snapshot(raw, enabled);
+                if (!AgentTrafficActive)
+                {
+                    _visible = _visible with { ProcessState = ProcessTrafficState.Off };
+                }
             }
 
             return _visible;
@@ -69,7 +76,7 @@ internal sealed class TrafficService : IDisposable
 
         try
         {
-            _monitor = TrafficMonitor.CreateForWindows(Hub, log: message => AppLog.Info(message));
+            _monitor = TrafficMonitor.CreateForWindows(Hub, log: message => AppLog.Info(message), agentTrafficEnabled: AgentTrafficActive);
             _monitor.Start(_settings.Current.Traffic.Enabled);
             // Measurements: AGENT_SPEED_TRAFFIC_INTERVAL=1|5 fixes the per-process interval (0: standby).
             if (Environment.GetEnvironmentVariable("AGENT_SPEED_TRAFFIC_INTERVAL") is { Length: > 0 } fixedInterval

@@ -114,6 +114,11 @@ internal sealed partial class DashboardWindow : Window
     /// <summary>The Network section's helper button: Settings → 網路流量, never the administrator prompt itself.</summary>
     public event EventHandler? TrafficSettingsRequested;
 
+    public event EventHandler<bool>? AgentTrafficEnabledRequested;
+
+    private void OnAgentTrafficEnabled(object sender, RoutedEventArgs e) =>
+        AgentTrafficEnabledRequested?.Invoke(this, ((CheckBox)sender).IsChecked == true);
+
     /// <summary>The last minute of this computer's traffic for the Network sparkline (once per second).</summary>
     public void SetTrafficChart(IReadOnlyList<Core.Traffic.TrafficPoint> history, bool bits, string summary)
     {

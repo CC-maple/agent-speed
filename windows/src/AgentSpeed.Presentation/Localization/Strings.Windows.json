@@ -347,5 +347,47 @@
     "zh-Hant": "Agent Speed 無法重新啟動。請手動啟動程式，詳細原因請查看本機日誌。",
     "zh-Hans": "Agent Speed 无法重启。请手动启动程序，详细原因请查看本地日志。",
     "ja": "Agent Speed を再起動できませんでした。アプリを手動で起動してください。詳細はローカルログを確認してください。"
+  },
+  "win.traffic.agents.enable": {
+    "zh-Hant": "啟用 agent 流量",
+    "ja": "agent の通信量を有効化",
+    "en": "Enable agent traffic",
+    "zh-Hans": "启用 agent 流量"
+  },
+  "win.traffic.agents.off": {
+    "zh-Hant": "已關閉",
+    "ja": "無効",
+    "en": "Off",
+    "zh-Hans": "已关闭"
+  },
+  "win.traffic.agents.restart": {
+    "zh-Hant": "需重新啟動",
+    "ja": "再起動が必要",
+    "en": "Restart required",
+    "zh-Hans": "需重启"
+  },
+  "win.traffic.agents.install": {
+    "zh-Hant": "需安裝",
+    "ja": "インストールが必要",
+    "en": "Install required",
+    "zh-Hans": "需安装"
+  },
+  "win.traffic.agents.on": {
+    "zh-Hant": "已啟用",
+    "ja": "有効",
+    "en": "Enabled",
+    "zh-Hans": "已启用"
+  },
+  "win.traffic.agents.starting": {
+    "zh-Hant": "連線中",
+    "ja": "接続中",
+    "en": "Connecting",
+    "zh-Hans": "连接中"
+  },
+  "win.traffic.agents.error": {
+    "zh-Hant": "連線異常",
+    "ja": "接続できません",
+    "en": "Connection unavailable",
+    "zh-Hans": "连接异常"
   }
 }

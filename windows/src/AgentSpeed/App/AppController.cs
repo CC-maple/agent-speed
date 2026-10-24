@@ -754,6 +754,8 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
 
         var traffic = Settings.Traffic;
         var snapshot = _traffic.Snapshot;
+        _dashboardModel.ConfigureAgentTraffic(traffic.AgentTrafficEnabled, _traffic.AgentTrafficActive,
+            _traffic.Helper?.Query().Installed == true, _loc);
         _dashboardModel.UpdateTraffic(snapshot, traffic.Enabled, traffic.IncludeTools, traffic.Bits, _loc);
         if (!_dashboardModel.TrafficShown)
         {
@@ -842,6 +844,8 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             _dashboard.UnitToggleRequested += (_, _) => ToggleLiveUnit();
             _dashboard.TrafficHistoryRequested += (_, source) => ShowHistory(source, traffic: true);
             _dashboard.TrafficSettingsRequested += (_, _) => OpenSettings("traffic");
+            _dashboard.AgentTrafficEnabledRequested += (_, enabled) =>
+                _settings.Update(s => s with { Traffic = s.Traffic with { AgentTrafficEnabled = enabled } });
             _dashboard.IsVisibleChanged += (_, _) =>
             {
                 if (_dashboard?.IsVisible != true)
