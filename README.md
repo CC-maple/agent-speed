@@ -1,4 +1,4 @@
-This branch removes network features from the Windows application while preserving local monitoring and cost calculations. See [Windows offline documentation](windows/OFFLINE.md) for the local exchange-rate interface, agent update script and build instructions. The upstream network features described below apply only to unmodified platforms.
+Windows offline fork of [zoefix/agent-speed](https://github.com/zoefix/agent-speed), based on upstream 1.3.0. This fork is not yet released; Traffic Helper is 1.0.1. See [fork changes](CHANGELOG.md) and [Windows instructions](windows/OFFLINE.md). macOS source is unchanged.
 
 <div align="center">
 
@@ -10,7 +10,7 @@ This branch removes network features from the Windows application while preservi
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-[![Release](https://img.shields.io/github/v/release/zoefix/agent-speed?style=flat-square)](https://github.com/zoefix/agent-speed/releases/latest)
+[![Upstream Release](https://img.shields.io/github/v/release/zoefix/agent-speed?style=flat-square)](https://github.com/zoefix/agent-speed/releases/latest)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?style=flat-square&logo=apple)
 ![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=flat-square&logo=windows)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
@@ -18,6 +18,14 @@ This branch removes network features from the Windows application while preservi
 <img src="docs/images/hero.png" width="760" alt="Agent Speed floating orb and menu bar">
 
 </div>
+
+## Windows offline fork
+
+- Windows removes automatic/manual updates, online price and exchange-rate synchronization, live reporting and their UI entries.
+- Local logs, token speed, history and cost calculations remain. Prices are bundled; an agent can update a local rates file using the supplied PowerShell script. Restart to load new rates.
+- The dashboard has a restart button and an opt-in agent-traffic checkbox, off by default. Changes require a restart; status distinguishes restart/install required, connecting, enabled and connection failure. Machine traffic remains independent.
+- Optional Helper 1.0.1 runs as a local Windows service. Installing it from the app requires administrator approval and creates a desktop service-management shortcut. Embedding the helper does not install it.
+- Root `VERSION` retains upstream 1.3.0; local Windows development builds show 0.0.0. Read [CHANGELOG.md](CHANGELOG.md) before publishing. The upstream release badge and macOS installer refer to the upstream project.
 
 ## Install
 
@@ -27,13 +35,13 @@ This branch removes network features from the Windows application while preservi
 curl -fsSL https://raw.githubusercontent.com/zoefix/agent-speed/main/install.sh | sh
 ```
 
-**Windows 10 / 11** (x64 and ARM64) — paste into PowerShell:
+**Windows offline fork** (.NET 10 SDK; x64 verified) — build the standalone app from this checkout:
 
 ```powershell
-irm https://raw.githubusercontent.com/zoefix/agent-speed/main/install.ps1 | iex
+dotnet publish windows\src\AgentSpeed\AgentSpeed.csproj -c Release -r win-x64 --self-contained true -o dist\windows-offline-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=false
 ```
 
-That's it. The installer downloads the latest release from GitHub, verifies its SHA-256 checksum, installs it and starts it. Run the same command again to update.
+For a build with the optional helper, its C++/Windows SDK requirements and manual installation steps, see [Windows instructions](windows/OFFLINE.md). The upstream `install.ps1` downloads the upstream version, not this fork. The macOS command above remains the upstream installer.
 
 <details>
 <summary>Uninstall</summary>
@@ -42,11 +50,9 @@ That's it. The installer downloads the latest release from GitHub, verifies its 
 curl -fsSL https://raw.githubusercontent.com/zoefix/agent-speed/main/install.sh | sh -s -- --uninstall
 ```
 
-```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/zoefix/agent-speed/main/install.ps1))) -Uninstall
-```
+For this Windows fork, remove the optional service from the app’s Network Traffic settings before removing a portable build. See [Windows instructions](windows/OFFLINE.md).
 
-Add `--purge` / `-Purge` to remove settings as well. On Windows you can also uninstall from *Settings → Apps*.
+The upstream macOS uninstaller supports `--purge` to remove settings. Windows fork service management is described in the linked instructions.
 </details>
 
 ## What you get
@@ -55,14 +61,14 @@ Add `--purge` / `-Purge` to remove settings as well. On Windows you can also uni
 - **Five orb styles, as many orbs as you like** — *LED Gauge*, *Needle Tachometer*, *Liquid Energy*, *Reactor* and *Minimal Ring*. Give each orb its own mix of sources (all of them, one tool, or Claude Code + Codex) and a glass name plate that stays legible on any wallpaper.
 - **Menu bar / taskbar** — a compact gauge and number that never jitters, right where you look: tok/s, money, or tok/s with the live money rate over today's total, plus optional network speed. On Windows it lives inside the taskbar, next to the clock.
 - **Dashboard** — a glowing line drawing of your current speed title's vehicle moves inside its orb — a walker, a bicycle pushing off, all the way to a rocket at the redline — plus a live chart, per-source speed, every active agent (including sub-agents) with its phase, and today's totals. Click a source to open its history.
-- **Cost** — what your agents' work would cost at each model's API list prices: live money per second next to tok/s, today's cost in the dashboard and each day's cost in the history. US dollars by default, or any of 38 currencies with daily exchange rates; sources on a flat-rate subscription can be left out. The price table updates daily from this repository.
+- **Cost** — API-equivalent live and daily costs, with subscription exclusions and 38 display currencies. Windows uses bundled model prices and a local exchange-rate file read once at startup; an agent can update the file, then restart the app. Unmodified macOS retains upstream online synchronization.
 - **Network traffic** — upload and download speed per agent or for the whole computer, as two small lines on the orbs, in the menu bar / taskbar and in the dashboard, with each day's traffic in the history. On Windows, per-agent traffic needs a small optional helper service, installed once with administrator approval.
 - **Title themes** — nine ladders of speed titles: *Vehicles*, *Animals*, *Beaufort Scale*, *Cosmos*, *Cultivation*, *Martial Arts*, *Arcane Ranks*, *Game Ranks* and *Engineer Career* — or up to eight sets of your own. Outside *Vehicles*, the dashboard orb shows a glowing title badge.
 - **Usage history** — every day since your oldest log: output and input tokens, requests, average speed and peak, cost and network traffic, charted by source over today, yesterday or any date range, with per-model speed and CSV export. Only daily totals are kept, so your history survives even after your tools delete old logs.
-- **Live reporting (opt-in)** — off by default; if you like, share your live numbers with an API you pick, such as the [Codex Radar](https://codexradar.com/) speed ladder, under a username you choose. Never conversation content, files or project names — see [Privacy](#privacy).
+- **Live reporting (macOS only, opt-in)** — off by default; if you like, share your live numbers with an API you pick, such as the [Codex Radar](https://codexradar.com/) speed ladder, under a username you choose. Never conversation content, files or project names — see [Privacy](#privacy).
 - **Native everywhere** — SwiftUI + AppKit on macOS, WPF with Fluent/Mica on Windows. Light, dark or automatic theme. English, 繁體中文, 简体中文, 日本語.
 - **Humane** — effects intensity from *Off* to *Max*, respects Reduce Motion and high contrast, click-through mode, magnetic edges, remembers its place on every display, launches at login.
-- **Always current** — checks GitHub Releases in the background and updates with one click, verified by SHA-256.
+- **Updates (macOS only)** — upstream GitHub Releases checks and update installation remain on macOS. The Windows fork has no update check or downloader.
 
 <p align="center"><img src="docs/images/orb-styles.png" width="760" alt="The five orb styles: LED Gauge, Needle Tachometer, Liquid Energy, Reactor and Minimal Ring"></p>
 
@@ -99,6 +105,14 @@ Ordinary Claude Desktop chat conversations are not stored on your computer, so t
 
 ## Privacy
 
+### Windows fork
+
+The Windows application does not make outgoing HTTP requests. Local traffic measurement remains optional. Helper reads event address fields only to exclude loopback traffic; addresses are not stored or sent through its local pipe. See the [security review](windows/TRAFFIC-HELPER-SECURITY.md) for trust boundaries and limitations.
+
+### Upstream privacy description
+
+The following original description applies to unmodified macOS and upstream Windows builds, including their optional network features. Those network features are removed from this Windows fork.
+
 Read-only. Local-only. No telemetry, no accounts. Agent Speed makes only three kinds of automatic network requests, and each one sends nothing about you: the update check against GitHub Releases, a daily download of the public model price table from this repository (GitHub, with jsDelivr as a mirror), and — only when you show costs in a currency other than US dollars — a daily download of public exchange rates (open.er-api.com, with the fawazahmed0 currency API and Frankfurter as fallbacks). Every user requests the same files, so no server learns your currency, models or usage. One switch in Settings turns all network access off; costs then use the price table and rates shipped with the app. Agent Speed never stores or displays conversation content — only token counts, model names and project folder names. The usage history keeps only daily totals (including each day's API-equivalent cost), in a small database on your computer (`~/Library/Application Support/AgentSpeed`, `%LOCALAPPDATA%\AgentSpeed`), and can be cleared in Settings. Updates are verified against the release's SHA-256 checksums before they are installed; the checksums are published with the release, so they catch corrupted or tampered downloads, not a compromised repository. The price table is plain data checked against strict rules; it is not signed.
 
 Network traffic: Agent Speed counts how many bytes programs send and receive, on this computer only. It never reads content, addresses or destinations; only live reporting (below), if you turn it on, sends your agents' byte counts to the service you chose. On Windows, per-agent traffic needs an optional helper service that runs as the restricted Local Service account and only counts bytes per process; it is installed and removed with one administrator prompt each ([details](spec/WINDOWS-SERVICE.md)).
@@ -125,7 +139,7 @@ swift test
 ```sh
 dotnet test windows/tests/AgentSpeed.Core.Tests
 dotnet test windows/tests/AgentSpeed.Presentation.Tests
-./windows/scripts/publish.sh    # → dist/AgentSpeed-Windows-{x64,arm64}.zip
+dotnet publish windows/src/AgentSpeed/AgentSpeed.csproj -c Release -r win-x64 --self-contained true -o dist/windows-offline-x64
 ```
 </details>
 
