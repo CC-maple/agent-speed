@@ -3,6 +3,12 @@
 /build/
 __pycache__/
 
+# Local editor configuration
+/.vscode/
+
+# Test reports, sample runtime data and one-off development scripts
+/artifacts/
+
 # Partner documents for live reporting services, kept local and sent to partners directly
 /spec/REPORTING.md
 /spec/REPORTING.zh-Hans.md
