@@ -1,3 +1,5 @@
+本分支的 Windows 版已移除联网功能，保留本地监控和费用计算。汇率文件接口、agent 更新脚本和构建方法见 [Windows 本地版本说明](windows/OFFLINE.md)。以下上游介绍中的联网功能仅适用于未修改的平台。
+
 <div align="center">
 
 <img src="assets/icon/icon-1024.png" width="128" alt="Agent Speed 图标">

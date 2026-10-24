@@ -1,3 +1,5 @@
+This branch removes network features from the Windows application while preserving local monitoring and cost calculations. See [Windows offline documentation](windows/OFFLINE.md) for the local exchange-rate interface, agent update script and build instructions. The upstream network features described below apply only to unmodified platforms.
+
 <div align="center">
 
 <img src="assets/icon/icon-1024.png" width="128" alt="Agent Speed icon">
