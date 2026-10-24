@@ -24,7 +24,7 @@ internal enum HelperActionResultKind
 }
 
 /// <param name="Message">The failure's text (a Win32 message), shown after <c>traffic.helper.error</c>.</param>
-internal readonly record struct HelperActionReport(HelperActionResultKind Result, string? Message = null);
+internal readonly record struct HelperActionReport(HelperActionResultKind Result, string? Message = null, string? NoticeKey = null);
 
 /// <summary>Installs, updates and removes the traffic helper with one administrator prompt each (WINDOWS-SERVICE 5).</summary>
 internal interface ITrafficHelperHost

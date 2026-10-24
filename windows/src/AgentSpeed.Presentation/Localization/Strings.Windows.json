@@ -389,5 +389,11 @@
     "ja": "接続できません",
     "en": "Connection unavailable",
     "zh-Hans": "连接异常"
+  },
+  "win.helper.shortcut.failed": {
+    "en": "The desktop shortcut could not be created. The service is installed; use Windows Services to manage AgentSpeedTraffic.",
+    "zh-Hant": "桌面捷徑建立失敗。服務已安裝，可在 Windows 服務中管理 AgentSpeedTraffic。",
+    "zh-Hans": "桌面快捷方式创建失败。服务已安装，可在 Windows 服务中管理 AgentSpeedTraffic。",
+    "ja": "デスクトップショートカットを作成できませんでした。サービスはインストール済みです。Windows のサービスで AgentSpeedTraffic を管理してください。"
   }
 }

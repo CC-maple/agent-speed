@@ -24,10 +24,12 @@ internal static unsafe class TdhLayoutReader
             return null;
         }
 
-        var buffer = (byte*)NativeMemory.AllocZeroed(size);
+        var capacity = size;
+        var buffer = (byte*)NativeMemory.AllocZeroed(capacity);
         try
         {
-            if (SystemLibraries.TdhGetEventInformation(record, 0, null, buffer, &size) != 0)
+            if (SystemLibraries.TdhGetEventInformation(record, 0, null, buffer, &size) != 0
+                || size < PropertyArrayOffset || size > capacity)
             {
                 return null;
             }

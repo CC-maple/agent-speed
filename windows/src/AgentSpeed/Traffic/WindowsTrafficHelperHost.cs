@@ -34,6 +34,18 @@ internal sealed class WindowsTrafficHelperHost : ITrafficHelperHost
         var result = install
             ? await HelperInstaller.InstallAsync(image.Bytes, image.Sha256, owner, cancellation).ConfigureAwait(true)
             : await HelperInstaller.RemoveAsync(image.Bytes, image.Sha256, owner, cancellation).ConfigureAwait(true);
+        if (install && result.Outcome == HelperInstallOutcome.Done)
+        {
+            try
+            {
+                HelperDesktopShortcut.CreateForCurrentUser();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException)
+            {
+                AppLog.Warn("Traffic helper installed, but the desktop shortcut could not be created.", ex);
+                return new HelperActionReport(HelperActionResultKind.Done, NoticeKey: "win.helper.shortcut.failed");
+            }
+        }
         if (result.Outcome != HelperInstallOutcome.Done && result.Outcome != HelperInstallOutcome.Cancelled)
         {
             AppLog.Warn($"Traffic helper {(install ? "install" : "removal")} {result.Outcome}: {result.Message} (error {result.Win32Error})");

@@ -237,10 +237,10 @@ internal sealed class TrafficPaneViewModel : ObservableObject
     private void Finish(HelperActionReport report, string doneKey)
     {
         IsBusy = false;
-        NoteIsError = report.Result == HelperActionResultKind.Failed;
+        NoteIsError = report.Result == HelperActionResultKind.Failed || report.NoticeKey is not null;
         Note = report.Result switch
         {
-            HelperActionResultKind.Done => _loc[doneKey],
+            HelperActionResultKind.Done => report.NoticeKey is { } key ? $"{_loc[doneKey]} {_loc[key]}" : _loc[doneKey],
             HelperActionResultKind.Cancelled => _loc["traffic.helper.cancelled"],
             _ => _loc.Format("traffic.helper.error", string.IsNullOrWhiteSpace(report.Message) ? _loc["traffic.unavailable.sampler"] : report.Message),
         };

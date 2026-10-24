@@ -42,7 +42,7 @@ public static class HelperProtocol
     public const string EtwSessionName = "AgentSpeed-Traffic";
 
     /// <summary>The helper version this source tree builds (and the app embeds, <c>bundledHelperVersion</c>).</summary>
-    public static HelperVersion BundledVersion { get; } = new(1, 0, 0);
+    public static HelperVersion BundledVersion { get; } = new(1, 0, 1);
 
     /// <summary>Raised only for security fixes: an older installed helper is never started.</summary>
     public static HelperVersion MinimumVersion { get; } = new(1, 0, 0);

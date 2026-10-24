@@ -63,7 +63,11 @@ internal sealed class ServiceRuntime : IDisposable
         }
 
         // Without it every client fails verification and reports helperDenied, which is the safe failure.
-        ProcessAccess.GrantQueryLimited(allowedUsers);
+        error = ProcessAccess.GrantQueryLimited(allowedUsers);
+        if (error != 0)
+        {
+            return error;
+        }
 
         var idle = new IdleTracker(Environment.TickCount64);
         var handler = new RequestHandler(_table, _stats, epoch, static () => (ulong)Kernel32.FileTimeNow());
