@@ -28,6 +28,19 @@ Windows 构建已移除自动和手动更新、模型价格在线同步、汇率
 
 源码安全复核结果和验证边界见 [Traffic Helper 安全复核](TRAFFIC-HELPER-SECURITY.md)。
 
+## Claude Desktop 经 Codex 路由的用量
+
+部分 CC Switch 路由会话的 Claude Desktop 本地日志只有零 token 的流式快照，没有最终用量。
+Windows 实时监控会只读查询 `%USERPROFILE%\.cc-switch\cc-switch.db` 的请求用量表，
+仅用 `session:响应 ID` 与已发现的 Claude Desktop 回复精确匹配，补全成功请求的真实 token 与完成时间。
+记录仍归属 Claude Desktop，以原响应 ID 更新，不另算一次请求，不把 Codex CLI 流量重复计入。
+缓存输入按代理记录的计数语义归一化；速率优先使用日志里的请求开始时间，缺失时才使用代理耗时。
+
+这不读取提供商密钥或对话正文，不连接代理端口，不发起网络请求，也不按字符数猜测 token。
+代理数据库不存在、格式不支持、损坏或暂时被占用时，继续读取原会话日志，后续本地记录写入后重试。
+只有确实保存了匹配的真实用量时才能补全；这不会为本来没有落盘的用量生成精确测速。
+当前补全作用于实时和今日统计；用量历史的离线全量分析仍以原会话日志为准。
+
 ## agent 更新汇率
 
 默认汇率文件：

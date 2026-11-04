@@ -203,7 +203,7 @@ internal sealed unsafe class TaskbarHost : IDisposable
         var scaleChanged = Math.Abs(geo.Scale - _scale) > 0.001 || geo.Vertical != _vertical;
         UpdateSecondaryCell(geo.Scale);
         var length = ResolveLength(_renderer.MeasureLength(_state, geo.Scale, geo.Vertical), forceLength || scaleChanged || _hwnd == 0);
-        if (TaskbarLocator.WidgetRect(geo, length) is not { } rect)
+        if (TaskbarLocator.WidgetRect(geo, length, _state.Position) is not { } rect)
         {
             Teardown();
             SetPresence(TaskbarPresence.Unavailable);
@@ -418,7 +418,7 @@ internal sealed unsafe class TaskbarHost : IDisposable
 
                 var desired = _renderer.MeasureLength(_state, geometry.Value.Scale, geometry.Value.Vertical);
                 var length = Math.Abs(geometry.Value.Scale - _scale) > 0.001 ? desired : _width.Peek(desired, Environment.TickCount64);
-                var rect = TaskbarLocator.WidgetRect(geometry.Value, length);
+                var rect = TaskbarLocator.WidgetRect(geometry.Value, length, _state.Position);
                 if (rect is not { } r || !RectEquals(r, _screenRect) || Math.Abs(geometry.Value.Scale - _scale) > 0.001)
                 {
                     Ensure();

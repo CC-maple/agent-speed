@@ -6,6 +6,7 @@ namespace AgentSpeed.Core.Monitoring;
 /// <param name="OmpAutomatic">The omp roots follow the profiles on disk (no folder chosen), so new profiles join later.</param>
 /// <param name="WorkBuddyRoot">The WorkBuddy <c>projects</c> folder; empty when not available.</param>
 /// <param name="WorkBuddyAiRoot">The WorkBuddy AI <c>projects</c> folder; empty when not available.</param>
+/// <param name="ClaudeUsageDatabasePath">Optional local CC Switch metadata for zero-usage desktop Responses snapshots.</param>
 internal sealed record SourceLocations(
     string CodexRoot,
     string ClaudeRoot,
@@ -16,7 +17,8 @@ internal sealed record SourceLocations(
     IReadOnlyList<string>? AntigravityStores = null,
     bool OmpAutomatic = false,
     string WorkBuddyRoot = "",
-    string WorkBuddyAiRoot = "")
+    string WorkBuddyAiRoot = "",
+    string ClaudeUsageDatabasePath = "")
 {
     public static SourceLocations Resolve(MonitorConfiguration configuration) => new(
         Normalize(configuration.CodexRoot ?? LiveMonitor.DefaultCodexRoot),
@@ -28,7 +30,9 @@ internal sealed record SourceLocations(
         NormalizeAll(LiveMonitor.AntigravityStores(configuration.AntigravityRoot)),
         OmpAutomatic: configuration.OmpRoot is null,
         WorkBuddyRoot: WorkBuddyRootOf(configuration.WorkBuddyRoot ?? LiveMonitor.DefaultWorkBuddyFolder),
-        WorkBuddyAiRoot: WorkBuddyRootOf(configuration.WorkBuddyAiRoot ?? LiveMonitor.DefaultWorkBuddyAiFolder));
+        WorkBuddyAiRoot: WorkBuddyRootOf(configuration.WorkBuddyAiRoot ?? LiveMonitor.DefaultWorkBuddyAiFolder),
+        ClaudeUsageDatabasePath: Normalize(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cc-switch", "cc-switch.db")));
 
     /// <summary>Codex <c>archived_sessions</c>, the sibling of the sessions root (METRICS 8).</summary>
     public string CodexArchiveRoot

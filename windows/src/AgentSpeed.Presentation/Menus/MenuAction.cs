@@ -30,6 +30,8 @@ public abstract record MenuAction
 
     public sealed record SetShowOnTaskbar(bool Show) : MenuAction;
 
+    public sealed record SetBarPosition(BarPosition Position) : MenuAction;
+
     /// <summary>The master switch of every orb.</summary>
     public sealed record SetShowOrbs(bool Show) : MenuAction;
 

@@ -20,6 +20,12 @@
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
             </StackPanel>
         </Border>
+        <controls:SettingsCard Header="{loc:Loc win.settings.bar.position}" Icon="&#xE8AB;">
+            <ComboBox MinWidth="200" SelectedIndex="{Binding BarPositionIndex, Mode=TwoWay}" AutomationProperties.Name="{loc:Loc win.settings.bar.position}">
+                <ComboBoxItem Content="{loc:Loc win.settings.bar.position.tray}" />
+                <ComboBoxItem Content="{loc:Loc win.settings.bar.position.left}" />
+            </ComboBox>
+        </controls:SettingsCard>
         <controls:SettingsCard Header="{loc:Loc settings.bar.mode}" Icon="&#xE8A9;">
             <ComboBox MinWidth="200" SelectedIndex="{Binding BarModeIndex, Mode=TwoWay}" AutomationProperties.Name="{loc:Loc settings.bar.mode}">
                 <ComboBoxItem Content="{loc:Loc settings.bar.mode.glyphValue}" />

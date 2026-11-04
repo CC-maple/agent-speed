@@ -1,4 +1,5 @@
 using AgentSpeed.Presentation.Layout;
+using AgentSpeed.Presentation.Settings;
 
 namespace AgentSpeed.Presentation.Tests;
 
@@ -269,6 +270,47 @@ public class PlacementMathTests
     {
         var widget = PlacementMath.TaskbarWidget(new RectD(0, 0, 64, 1080), new RectD(0, 900, 64, 180), 40, 4, vertical: true);
         Assert.Equal(new RectD(0, 856, 64, 40), widget);
+    }
+
+    [Fact]
+    public void TaskbarWidgetAtTheLeftKeepsItsAnchorAsItGrows()
+    {
+        var bar = new RectD(-1920, 1032, 1920, 48);
+        var tray = new RectD(-220, 1036, 220, 40);
+        var narrow = PlacementMath.TaskbarWidget(bar, tray, 90, 6, false, BarPosition.Left);
+        var wide = PlacementMath.TaskbarWidget(bar, tray, 280, 6, false, BarPosition.Left);
+        Assert.Equal(new RectD(-1914, 1036, 90, 40), narrow);
+        Assert.Equal(new RectD(-1914, 1036, 280, 40), wide);
+    }
+
+    [Fact]
+    public void LeftPositionUsesTheTopWhenTaskbarIsVertical()
+    {
+        var bar = new RectD(1920, -200, 64, 1080);
+        var tray = new RectD(1920, 700, 64, 180);
+        Assert.Equal(new RectD(1920, -196, 64, 140), PlacementMath.TaskbarWidget(bar, tray, 140, 4, true, BarPosition.Left));
+    }
+
+    [Fact]
+    public void LeftPositionDoesNotNeedATray()
+    {
+        Assert.Equal(new RectD(4, 0, 90, 48),
+            PlacementMath.TaskbarWidget(new RectD(0, 0, 1920, 48), default, 90, 4, false, BarPosition.Left));
+        Assert.Equal(new RectD(0, 4, 64, 40),
+            PlacementMath.TaskbarWidget(new RectD(0, 0, 64, 1080), default, 40, 4, true, BarPosition.Left));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LeftPositionRejectsOverflowAndEmptyGeometry(bool vertical)
+    {
+        var bar = vertical ? new RectD(0, 0, 48, 300) : new RectD(0, 0, 300, 48);
+        var tray = vertical ? new RectD(0, 100, 48, 200) : new RectD(100, 0, 200, 48);
+        Assert.Null(PlacementMath.TaskbarWidget(bar, tray, 100, 4, vertical, BarPosition.Left));
+        Assert.Null(PlacementMath.TaskbarWidget(bar, default, 300, 4, vertical, BarPosition.Left));
+        Assert.Null(PlacementMath.TaskbarWidget(bar, tray, 0, 4, vertical, BarPosition.Left));
+        Assert.Null(PlacementMath.TaskbarWidget(default, tray, 90, 4, vertical, BarPosition.Left));
     }
 
     [Fact]

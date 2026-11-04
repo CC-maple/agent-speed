@@ -359,6 +359,12 @@ internal sealed class SettingsViewModel : ObservableObject
         set => Apply(s => s with { ShowOnTaskbar = value });
     }
 
+    public int BarPositionIndex
+    {
+        get => (int)S.BarPosition;
+        set => Apply(s => s with { BarPosition = (BarPosition)value });
+    }
+
     public int BarModeIndex
     {
         get => (int)S.BarMode;

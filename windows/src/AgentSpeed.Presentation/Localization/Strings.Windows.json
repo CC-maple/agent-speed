@@ -223,10 +223,34 @@
     "ja": "Windows に合わせるか、常にライトまたはダークを使います。"
   },
   "win.settings.bar.show.description": {
-    "zh-Hant": "在通知區域左側顯示即時速度。",
-    "zh-Hans": "在通知区域左侧显示实时速度。",
-    "en": "Shows the live speed next to the notification area.",
-    "ja": "通知領域の左にライブ速度を表示します。"
+    "zh-Hant": "在工作列顯示即時速度，可選擇顯示位置。",
+    "zh-Hans": "在任务栏显示实时速度，可选择显示位置。",
+    "en": "Shows the live speed on the taskbar at your chosen position.",
+    "ja": "タスクバーの選択した位置にライブ速度を表示します。"
+  },
+  "win.settings.bar.position": {
+    "zh-Hant": "顯示位置",
+    "zh-Hans": "显示位置",
+    "en": "Position",
+    "ja": "表示位置"
+  },
+  "win.settings.bar.position.tray": {
+    "zh-Hant": "系統匣旁",
+    "zh-Hans": "托盘旁",
+    "en": "By tray",
+    "ja": "トレイ横"
+  },
+  "win.settings.bar.position.left": {
+    "zh-Hant": "最左側",
+    "zh-Hans": "最左侧",
+    "en": "Far left",
+    "ja": "左端"
+  },
+  "win.settings.bar.hide": {
+    "zh-Hant": "隱藏",
+    "zh-Hans": "隐藏",
+    "en": "Hide",
+    "ja": "非表示"
   },
   "win.settings.clickThrough.description": {
     "zh-Hant": "懸浮窗不再攔截滑鼠，可從工作列或通知區域圖示操作。",

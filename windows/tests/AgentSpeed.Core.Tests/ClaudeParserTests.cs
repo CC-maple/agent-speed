@@ -325,6 +325,39 @@ public sealed class ClaudeParserTests
         Assert.Equal(AgentPhase.Tools, parser.Phase);
     }
 
+    [Fact]
+    public void StopHookSummaryEndsAThirdPartyDesktopTurnWithoutInventingUsage()
+    {
+        var parser = new ClaudeParser(AgentA, new Deduper());
+        var sink = new RecordingSink();
+        Feed.Lines(parser, sink,
+            User(T0, "\"go\"", extra: ",\"entrypoint\":\"claude-desktop-3p\""),
+            Assistant(T0 + 2000, "resp_routed", 0, "null"),
+            $$"""{"subtype":"stop_hook_summary","type":"system","timestamp":"{{Ts.Iso(T0 + 3000)}}"}""");
+
+        Assert.Equal(AgentPhase.Idle, parser.Phase);
+        Assert.Null(parser.InFlightStartMs);
+        var response = Assert.Single(sink.Latest);
+        Assert.Equal(SourceKind.ClaudeDesktop, response.Source);
+        Assert.Equal(0, response.Tokens.Output);
+        Assert.False(response.Final);
+
+        Feed.Lines(parser, sink, UserText(T0 + 4000, "next"), Assistant(T0 + 5000, "msg_next", 20));
+        Assert.Equal(T0 + 4000, sink.Latest[1].StartMs);
+    }
+
+    [Fact]
+    public void NestedStopHookSummaryDoesNotEndATurn()
+    {
+        var parser = new ClaudeParser(AgentA, new Deduper());
+        var sink = new RecordingSink();
+        Feed.Lines(parser, sink, UserText(T0, "go"),
+            $$"""{"type":"system","timestamp":"{{Ts.Iso(T0 + 1000)}}","data":{"subtype":"stop_hook_summary"} }""");
+
+        Assert.Equal(AgentPhase.Generating, parser.Phase);
+        Assert.Equal(T0, parser.InFlightStartMs);
+    }
+
     [Theory]
     [InlineData("C:\\\\Users\\\\me\\\\proj", "proj")]
     [InlineData("C:\\\\Users\\\\me\\\\proj\\\\", "proj")]

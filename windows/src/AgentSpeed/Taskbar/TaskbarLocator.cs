@@ -1,5 +1,6 @@
 using AgentSpeed.Interop;
 using AgentSpeed.Presentation.Layout;
+using AgentSpeed.Presentation.Settings;
 
 namespace AgentSpeed.Taskbar;
 
@@ -40,12 +41,12 @@ internal static class TaskbarLocator
     }
 
     /// <summary>Widget rectangle in screen coordinates.</summary>
-    public static RECT? WidgetRect(TaskbarGeometry geometry, int length)
+    public static RECT? WidgetRect(TaskbarGeometry geometry, int length, BarPosition position = BarPosition.Tray)
     {
         var bar = ToRect(geometry.TaskbarRect);
         var tray = geometry.TrayRect.IsEmpty ? EstimatedTray(geometry) : ToRect(geometry.TrayRect);
         var gap = Math.Round(4 * geometry.Scale);
-        var rect = PlacementMath.TaskbarWidget(bar, tray, length, gap, geometry.Vertical);
+        var rect = PlacementMath.TaskbarWidget(bar, tray, length, gap, geometry.Vertical, position);
         if (rect is not { } r)
         {
             return null;

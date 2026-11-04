@@ -51,6 +51,9 @@ internal static class MenuBuilder
             case MenuAction.SetShowOnTaskbar a:
                 commands.UpdateSettings(s => s with { ShowOnTaskbar = a.Show });
                 break;
+            case MenuAction.SetBarPosition a:
+                commands.UpdateSettings(s => s with { BarPosition = a.Position, ShowOnTaskbar = true });
+                break;
             case MenuAction.SetShowOrbs a:
                 commands.SetShowOrbs(a.Show);
                 break;

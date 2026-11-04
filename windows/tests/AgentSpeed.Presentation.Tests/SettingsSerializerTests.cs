@@ -18,6 +18,7 @@ public class SettingsSerializerTests
             Metric = SpeedMetric.Total,
             RedlineOutput = 750,
             ShowOnTaskbar = false,
+            BarPosition = BarPosition.Left,
             BarMode = BarDisplayMode.GlyphOnly,
             BarColoredGlyph = false,
             BarShowUnit = false,
@@ -72,6 +73,31 @@ public class SettingsSerializerTests
         var back = SettingsSerializer.Deserialize(json);
         AssertEquivalent(AppSettings.Default, back);
         Assert.Empty(back.OrbAnchors);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"taskbar\":{\"position\":\"unknown\"}}")]
+    [InlineData("{\"taskbar\":{\"position\":17}}")]
+    [InlineData("{\"taskbar\":{\"position\":null}}")]
+    public void TaskbarPositionDefaultsToTray(string json)
+    {
+        Assert.Equal(BarPosition.Tray, SettingsSerializer.Deserialize(json).BarPosition);
+        Assert.Equal(BarPosition.Tray, (AppSettings.Default with { BarPosition = (BarPosition)17 }).Validated().BarPosition);
+    }
+
+    [Theory]
+    [InlineData(BarPosition.Tray)]
+    [InlineData(BarPosition.Left)]
+    public void TaskbarPositionRoundTripsWhileHidden(BarPosition position)
+    {
+        var settings = AppSettings.Default with { BarPosition = position, ShowOnTaskbar = false };
+        var json = SettingsSerializer.Serialize(settings);
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal(position.ToString(), document.RootElement.GetProperty("taskbar").GetProperty("position").GetString());
+        var restored = SettingsSerializer.Deserialize(json);
+        Assert.Equal(position, restored.BarPosition);
+        Assert.False(restored.ShowOnTaskbar);
     }
 
     [Fact]

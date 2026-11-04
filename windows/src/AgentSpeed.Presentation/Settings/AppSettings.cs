@@ -24,6 +24,12 @@ public enum BarDisplayMode
     GlyphOnly,
 }
 
+public enum BarPosition
+{
+    Tray,
+    Left,
+}
+
 public enum EffectsIntensity
 {
     Off,
@@ -93,6 +99,8 @@ public sealed record AppSettings
         : this with { RedlineOutput = HeatMath.ClampRedline(redline) };
 
     public bool ShowOnTaskbar { get; init; } = true;
+
+    public BarPosition BarPosition { get; init; } = BarPosition.Tray;
 
     public BarDisplayMode BarMode { get; init; } = BarDisplayMode.GlyphAndValue;
 
@@ -295,6 +303,7 @@ public sealed record AppSettings
         Metric = Enum.IsDefined(Metric) ? Metric : SpeedMetric.Output,
         RedlineOutput = HeatMath.ClampRedline(RedlineOutput),
         RedlineTotal = HeatMath.ClampRedlineTotal(RedlineTotal),
+        BarPosition = Enum.IsDefined(BarPosition) ? BarPosition : BarPosition.Tray,
         BarMode = Enum.IsDefined(BarMode) ? BarMode : BarDisplayMode.GlyphAndValue,
         OrbSize = double.IsFinite(OrbSize) ? Math.Clamp(Math.Round(OrbSize), MinOrbSize, MaxOrbSize) : DefaultOrbSize,
         OrbOpacity = double.IsFinite(OrbOpacity) ? Math.Clamp(OrbOpacity, MinOrbOpacity, MaxOrbOpacity) : MaxOrbOpacity,

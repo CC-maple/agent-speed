@@ -338,10 +338,31 @@ public class OrbMenuModelTests
         Assert.Equal(new MenuAction.SetOrbAlwaysOnTop("solo", false), Row(menu, "menu.alwaysOnTop").Action);
         Assert.Equal(new MenuAction.SetOrbClickThrough("solo", false), Row(menu, "menu.clickThrough").Action);
         Assert.Equal(new MenuAction.SetShowOrbs(false), Row(menu, "menu.hideOrb").Action);
-        Assert.Equal(new MenuAction.SetShowOnTaskbar(false), Row(menu, "settings.bar.show").Action);
+        Assert.True(Row(menu, "settings.bar.show").IsChecked);
+        Assert.Equal(new MenuAction.SetShowOnTaskbar(false), Row(Sub(menu, "settings.bar.show"), "win.settings.bar.hide").Action);
         Assert.Equal(new MenuAction.OpenSettings("about"), Row(menu, "menu.about").Action);
         Assert.All(new[] { "menu.size", "menu.alwaysOnTop", "menu.clickThrough" }, key => Assert.True(Row(menu, key).IsEnabled));
         Assert.DoesNotContain(menu.Rows, r => r.Label == En["settings.orb"]);
+    }
+
+    [Theory]
+    [InlineData(true, BarPosition.Tray, "win.settings.bar.position.tray")]
+    [InlineData(true, BarPosition.Left, "win.settings.bar.position.left")]
+    [InlineData(false, BarPosition.Tray, "win.settings.bar.hide")]
+    [InlineData(false, BarPosition.Left, "win.settings.bar.hide")]
+    public void TaskbarSubmenuOffersPositionsAndHide(bool shown, BarPosition position, string selectedKey)
+    {
+        var menu = QuickMenu(With(Orb("solo")) with { ShowOnTaskbar = shown, BarPosition = position });
+        var parent = Row(menu, "settings.bar.show");
+        Assert.Equal(shown, parent.IsChecked);
+        Assert.Null(parent.Action);
+        var submenu = parent.Submenu!;
+        Assert.Equal(Labels("win.settings.bar.position.tray", "win.settings.bar.position.left", Separator, "win.settings.bar.hide"), Outline(submenu));
+        Assert.Equal([En[selectedKey]], submenu.Rows.Where(r => r.IsChecked).Select(r => r.Label));
+        Assert.Equal(new MenuAction.SetBarPosition(BarPosition.Tray), Row(submenu, "win.settings.bar.position.tray").Action);
+        Assert.Equal(new MenuAction.SetBarPosition(BarPosition.Left), Row(submenu, "win.settings.bar.position.left").Action);
+        Assert.Equal(new MenuAction.SetShowOnTaskbar(false), Row(submenu, "win.settings.bar.hide").Action);
+        Assert.All(submenu.Rows, row => Assert.True(row.IsEnabled));
     }
 
     [Fact]

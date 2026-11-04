@@ -687,7 +687,8 @@ internal sealed partial class AppController : IAppCommands, IOrbHost, IDisposabl
             bar.Item1,
             money?.Unknown ?? false,
             secondary,
-            traffic);
+            traffic,
+            s.BarPosition);
         _taskbar.Update(_lastTaskbarState);
     }
 

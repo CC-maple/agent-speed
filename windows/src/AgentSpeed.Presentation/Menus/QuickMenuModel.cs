@@ -44,7 +44,15 @@ public static class QuickMenuModel
         }
 
         entries.Add(new MenuRow(localizer[MasterSwitchKey(orbs.Length, shown)]) { Action = new MenuAction.SetShowOrbs(!shown) });
-        entries.Add(Toggle(localizer["settings.bar.show"], settings.ShowOnTaskbar, new MenuAction.SetShowOnTaskbar(!settings.ShowOnTaskbar)));
+        entries.Add(Submenu(localizer["settings.bar.show"],
+        [
+            Toggle(localizer["win.settings.bar.position.tray"], settings.ShowOnTaskbar && settings.BarPosition == BarPosition.Tray,
+                new MenuAction.SetBarPosition(BarPosition.Tray)),
+            Toggle(localizer["win.settings.bar.position.left"], settings.ShowOnTaskbar && settings.BarPosition == BarPosition.Left,
+                new MenuAction.SetBarPosition(BarPosition.Left)),
+            MenuSeparator.Instance,
+            Toggle(localizer["win.settings.bar.hide"], !settings.ShowOnTaskbar, new MenuAction.SetShowOnTaskbar(false)),
+        ]) with { IsChecked = settings.ShowOnTaskbar });
         entries.Add(MenuSeparator.Instance);
         entries.Add(Command(localizer["menu.settings"], new MenuAction.OpenSettings(null), MenuGlyph.Settings));
         entries.Add(Command(localizer["menu.about"], new MenuAction.OpenSettings("about"), MenuGlyph.About));

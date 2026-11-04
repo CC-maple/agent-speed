@@ -38,6 +38,7 @@ public static class SettingsSerializer
 
             w.WriteStartObject("taskbar");
             w.WriteBoolean("show", s.ShowOnTaskbar);
+            w.WriteString("position", s.BarPosition.ToString());
             w.WriteString("mode", s.BarMode.ToString());
             w.WriteBoolean("coloredGlyph", s.BarColoredGlyph);
             w.WriteBoolean("showUnit", s.BarShowUnit);
@@ -198,6 +199,7 @@ public static class SettingsSerializer
             RedlineOutput = ReadDouble(root, "redlineOutput", ReadDouble(root, "redline", d.RedlineOutput)),
             RedlineTotal = ReadDouble(root, "redlineTotal", d.RedlineTotal),
             ShowOnTaskbar = ReadBool(taskbar, "show", d.ShowOnTaskbar),
+            BarPosition = ReadEnum(taskbar, "position", d.BarPosition),
             BarMode = ReadEnum(taskbar, "mode", d.BarMode),
             BarColoredGlyph = ReadBool(taskbar, "coloredGlyph", d.BarColoredGlyph),
             BarShowUnit = ReadBool(taskbar, "showUnit", d.BarShowUnit),

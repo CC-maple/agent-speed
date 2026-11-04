@@ -47,6 +47,7 @@ internal sealed class MonitorCore : IDisposable
     private readonly Dictionary<TrackedFile, BackgroundRead> _wholeReads = [];
     private readonly CancellationTokenSource _backgroundStop = new();
     private readonly OpenCodeSource? _openCode;
+    private readonly ClaudeProxyUsage? _claudeProxyUsage;
     private readonly AntigravityConnections _connections = new();
     private readonly bool _ompAutomatic;
     private bool _openCodeSeeded;
@@ -94,6 +95,11 @@ internal sealed class MonitorCore : IDisposable
         }
 
         OpenCodeRootPath = locations.OpenCodeRoot;
+        if (_enabled.Contains(SourceKind.ClaudeDesktop) && locations.ClaudeUsageDatabasePath.Length > 0)
+        {
+            _claudeProxyUsage = new ClaudeProxyUsage(locations.ClaudeUsageDatabasePath);
+        }
+
         _ompAutomatic = locations.OmpAutomatic;
         RefreshAvailability();
     }
@@ -283,6 +289,7 @@ internal sealed class MonitorCore : IDisposable
             _openCodeSeeded = true;
         }
 
+        RefreshClaudeUsage(seeded: true);
         return new SeedReport(stopwatch.ElapsedMilliseconds, discovered, filesRead, bytesRead, _responsesSeen);
     }
 
@@ -348,24 +355,23 @@ internal sealed class MonitorCore : IDisposable
             }
         }
 
-        if (due is null)
+        if (due is not null)
         {
-            return changed;
-        }
-
-        foreach (var tracked in due)
-        {
-            if (Stamp(tracked) is not { } stamp)
+            foreach (var tracked in due)
             {
-                Remove(tracked);
-                changed = true;
-            }
-            else if (tracked.Dirty || stamp.Length != tracked.KnownLength || stamp.WriteUtc != tracked.KnownWriteUtc)
-            {
-                changed |= ReadLive(tracked);
+                if (Stamp(tracked) is not { } stamp)
+                {
+                    Remove(tracked);
+                    changed = true;
+                }
+                else if (tracked.Dirty || stamp.Length != tracked.KnownLength || stamp.WriteUtc != tracked.KnownWriteUtc)
+                {
+                    changed |= ReadLive(tracked);
+                }
             }
         }
 
+        changed |= RefreshClaudeUsage(seeded: false);
         return changed;
     }
 
@@ -791,8 +797,9 @@ internal sealed class MonitorCore : IDisposable
 
         PushAgent(tracked);
         long? liveNowMs = seeded ? null : Clock();
-        foreach (var (response, isCompletion) in _collector.Items)
+        foreach (var (original, isCompletion) in _collector.Items)
         {
+            var response = _claudeProxyUsage?.Observe(original) ?? original;
             _responsesSeen++;
             if (_enabled.Contains(response.Source))
             {
@@ -803,6 +810,24 @@ internal sealed class MonitorCore : IDisposable
         }
 
         _collector.Items.Clear();
+    }
+
+    private bool RefreshClaudeUsage(bool seeded)
+    {
+        if (_claudeProxyUsage is null)
+        {
+            return false;
+        }
+
+        var updates = _claudeProxyUsage.Refresh();
+        long? liveNowMs = seeded ? null : Clock();
+        foreach (var response in updates)
+        {
+            _engine.Upsert(response, isCompletion: false, seeded, liveNowMs);
+            _observer?.OnResponse(response, isCompletion: false, seeded);
+        }
+
+        return updates.Count > 0;
     }
 
     private bool ReadLive(TrackedFile tracked)

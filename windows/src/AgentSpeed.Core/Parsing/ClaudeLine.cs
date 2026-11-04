@@ -8,6 +8,7 @@ internal enum ClaudeLineKind : byte
     User,
     Assistant,
     ApiRequest,
+    System,
 }
 
 internal enum EntrypointKind : byte
@@ -36,6 +37,7 @@ internal struct ClaudeLine
     public bool IsSidechain;
     public bool IsInterrupt;
     public bool HasToolUse;
+    public bool IsStopHookSummary;
     public StopReasonKind StopReason;
     public string? Cwd;
     public string? MessageId;
@@ -115,7 +117,14 @@ internal static class ClaudeLineReader
                 : reader.ValueTextEquals("assistant"u8) ? ClaudeLineKind.Assistant
                 : reader.ValueTextEquals("user"u8) ? ClaudeLineKind.User
                 : reader.ValueTextEquals("api-request"u8) ? ClaudeLineKind.ApiRequest
+                : reader.ValueTextEquals("system"u8) ? ClaudeLineKind.System
                 : ClaudeLineKind.Other;
+            JsonScan.SkipValue(ref reader);
+        }
+        else if (reader.ValueTextEquals("subtype"u8))
+        {
+            reader.Read();
+            result.IsStopHookSummary = reader.TokenType == JsonTokenType.String && reader.ValueTextEquals("stop_hook_summary"u8);
             JsonScan.SkipValue(ref reader);
         }
         else if (reader.ValueTextEquals("timestamp"u8))

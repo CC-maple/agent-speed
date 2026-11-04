@@ -77,6 +77,11 @@ internal sealed class ClaudeParser : TranscriptParser<ClaudeLine>
             case ClaudeLineKind.Assistant:
                 ApplyAssistant(in line, ts, sink);
                 break;
+            case ClaudeLineKind.System when line.IsStopHookSummary:
+                _pendingStartMs = null;
+                _preciseStart = false;
+                SetPhase(AgentPhase.Idle, ts, null);
+                break;
         }
     }
 

@@ -1,3 +1,5 @@
+using AgentSpeed.Presentation.Settings;
+
 namespace AgentSpeed.Presentation.Layout;
 
 /// <summary>Window placement rules for the orb, the dashboard flyout and the taskbar widget (physical pixels).</summary>
@@ -97,10 +99,11 @@ public static class PlacementMath
     }
 
     /// <summary>
-    /// Taskbar widget rectangle in taskbar client coordinates: immediately before the notification area along
-    /// the taskbar, spanning its thickness. Returns null when there is not enough room.
+    /// Taskbar widget rectangle in screen coordinates: before the notification area, or at the leading edge,
+    /// spanning the taskbar's thickness. Returns null when there is not enough room.
     /// </summary>
-    public static RectD? TaskbarWidget(RectD taskbar, RectD tray, double length, double gap, bool vertical)
+    public static RectD? TaskbarWidget(RectD taskbar, RectD tray, double length, double gap, bool vertical,
+        BarPosition position = BarPosition.Tray)
     {
         if (taskbar.IsEmpty || length <= 0)
         {
@@ -110,8 +113,8 @@ public static class PlacementMath
         if (vertical)
         {
             var bottom = tray.IsEmpty ? taskbar.Bottom : tray.Y - gap;
-            var top = bottom - length;
-            if (top < taskbar.Y + taskbar.Height * 0.25)
+            var top = position == BarPosition.Left ? Math.Round(taskbar.Y + gap) : bottom - length;
+            if (position == BarPosition.Left ? top + Math.Round(length) > bottom : top < taskbar.Y + taskbar.Height * 0.25)
             {
                 return null;
             }
@@ -120,8 +123,8 @@ public static class PlacementMath
         }
 
         var right = tray.IsEmpty ? taskbar.Right : tray.X - gap;
-        var left = right - length;
-        if (left < taskbar.X + taskbar.Width * 0.25)
+        var left = position == BarPosition.Left ? Math.Round(taskbar.X + gap) : right - length;
+        if (position == BarPosition.Left ? left + Math.Round(length) > right : left < taskbar.X + taskbar.Width * 0.25)
         {
             return null;
         }

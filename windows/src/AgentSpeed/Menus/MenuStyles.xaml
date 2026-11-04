@@ -133,9 +133,12 @@
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Text="{Binding Path=(menus:MenuChrome.Detail), RelativeSource={RelativeSource TemplatedParent}}" />
                     <Grid x:Name="TrailingBox" Grid.Column="3" Width="16" Margin="12,0,0,0">
+                        <TextBlock x:Name="HeaderCheckGlyph" Text="&#xE73E;" FontSize="14" Visibility="Hidden"
+                                   FontFamily="{DynamicResource AppSymbolFontFamily}"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" />
                         <TextBlock x:Name="Chevron" Text="&#xE76C;" FontSize="12"
                                    FontFamily="{DynamicResource AppSymbolFontFamily}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                   HorizontalAlignment="Right" VerticalAlignment="Center" />
                     </Grid>
                 </Grid>
             </Border>
@@ -168,6 +171,10 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="TrailingBox" Property="Width" Value="36" />
+                <Setter TargetName="HeaderCheckGlyph" Property="Visibility" Value="Visible" />
+            </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Icon" Value="{x:Null}" />

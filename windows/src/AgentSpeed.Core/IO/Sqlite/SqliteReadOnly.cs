@@ -37,22 +37,22 @@ internal static class SqliteReadOnly
     /// <c>immutable=1</c> only while no <c>-wal</c> exists.
     /// </summary>
     /// <exception cref="SqliteException">The database cannot be opened or read.</exception>
-    public static SqliteConnection Open(string path, out bool immutable)
+    public static SqliteConnection Open(string path, out bool immutable, int busyTimeoutMs = SqliteConnection.DefaultBusyTimeoutMs)
     {
         immutable = IsClosedWalDatabase(path);
         if (immutable)
         {
-            return Verified(SqliteConnection.Open(path, SqliteOpenMode.Immutable));
+            return Verified(SqliteConnection.Open(path, SqliteOpenMode.Immutable, busyTimeoutMs));
         }
 
         try
         {
-            return Verified(SqliteConnection.Open(path, SqliteOpenMode.ReadOnly));
+            return Verified(SqliteConnection.Open(path, SqliteOpenMode.ReadOnly, busyTimeoutMs));
         }
         catch (SqliteException) when (!File.Exists(path + WalSuffix))
         {
             immutable = true;
-            return Verified(SqliteConnection.Open(path, SqliteOpenMode.Immutable));
+            return Verified(SqliteConnection.Open(path, SqliteOpenMode.Immutable, busyTimeoutMs));
         }
     }
 
